@@ -1,0 +1,53 @@
+# -*- Makefile -*-
+WARN = -Wall -Wextra
+#UNROLL = -funroll-loops
+OPTI = -O2 #-msse4.2 -mssse3 -msse2 $(UNROLL)
+#DEBUG = -DDEBUG -g -ggdb #-O0
+#DEBUG = -DDEBUG
+#SANITY = -fsanitize=address -fno-omit-frame-pointer -g
+CXX = g++
+#CXX = clang++
+#OBJS = period.o AlgorithmPrimitivity.o
+STD = -std=c++11
+#INCLUDE = -I$(HOME)/git/MTToolbox/include
+LIB = -lMTToolBox -lntl -lgmp -lgf2x
+CXXFLAGS = -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS \
+$(OPTI) $(WARN) $(STD) $(DEBUG) $(INCLUDE) $(SANITY) $(LIB)
+
+all: test_w256 calc_equidist calc_period calc_fixpoint calc_parity \
+	dSFMTAVX2dc
+
+test_w256: test_w256.cpp w256.hpp
+	$(CXX) $(CXXFLAGS) -o $@ test_w256.cpp $(LIB)
+
+dSFMTAVX2eq: dSFMTAVX2eq.cpp dSFMTAVX2search.hpp \
+	AlgorithmDSFMTEquidistribution.hpp Annihilate.hpp
+	$(CXX) $(CXXFLAGS) -o $@ dSFMTAVX2eq.cpp $(LIB)
+
+test_linearity: test_linearity.cpp dSFMTAVX2search.hpp
+	$(CXX) $(CXXFLAGS) -o $@ test_linearity.cpp $(LIB)
+
+calc_period: calc_period.cpp dSFMTAVX2search.hpp Annihilate.o
+	$(CXX) $(CXXFLAGS) -o $@ calc_period.cpp Annihilate.o $(LIB)
+
+calc_fixpoint: calc_fixpoint_main.cpp calc_fixpoint.cpp calc_fixpoint.h \
+	dSFMTAVX2search.hpp Annihilate.o printBinary.o
+	$(CXX) $(CXXFLAGS) -o $@ calc_fixpoint.cpp \
+	calc_fixpoint_main.cpp Annihilate.o printBinary.o $(LIB)
+
+calc_parity: calc_parity_main.cpp calc_parity.cpp calc_parity.h \
+	dSFMTAVX2search.hpp Annihilate.o printBinary.o
+	$(CXX) $(CXXFLAGS) -o $@ calc_parity_main.cpp calc_parity.cpp \
+	Annihilate.o printBinary.o $(LIB)
+
+dSFMTAVX2dc: dSFMTAVX2dc_main.cpp dSFMTAVX2dc.cpp dSFMTAVX2search.hpp \
+	AlgorithmDSFMTEquidistribution.hpp \
+	Annihilate.hpp AlgorithmCalcFixPoint.hpp
+	$(CXX) $(CXXFLAGS) -o $@ dSFMTAVX2dc_main.cpp dSFMTAVX2dc.cpp \
+	$(LIB)
+
+.cpp.o:
+	$(CXX) $(CXXFLAGS) -c $<
+
+clean:
+	rm -rf *.o *~ *.dSYM
