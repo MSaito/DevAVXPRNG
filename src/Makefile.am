@@ -1,5 +1,5 @@
+EXTRA_DIST = Makefile.private dSFMTAVX2dc_mpi.cpp dSFMTAVX512Fdc_mpi.cpp
 common_header = devavxprng.h w256.hpp w512.hpp
-noinst_DATA = Makefile.private dSFMTAVX2dc_mpi.cpp dSFMTAVX512Fdc_mpi.cpp
 noinst_PROGRAMS = dSFMTAVX2dc dSFMTAVX2eq dSFMTAVX512Fdc dSFMTAVX512Feq
 dSFMTAVX2dc_SOURCES = dSFMTAVX2dc.cpp dSFMTAVX2search.hpp \
 dSFMTAVX2dc.h AlgorithmDSFMTEquidistribution.hpp \

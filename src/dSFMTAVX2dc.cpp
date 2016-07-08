@@ -16,7 +16,7 @@
 #include "dSFMTAVX2search.hpp"
 #include "AlgorithmDSFMTEquidistribution.hpp"
 #include "Annihilate.hpp"
-#include "AlgorithmCalcFixpoint.hpp"
+#include "AlgorithmCalcFixPoint.hpp"
 #include "dSFMTAVX2dc.h"
 
 using namespace std;

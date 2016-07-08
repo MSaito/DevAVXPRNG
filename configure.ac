@@ -27,10 +27,10 @@ string.h])
 AC_TYPE_INT64_T
 AC_TYPE_UINT64_T
 
-AC_CHECK_LIB(ntl, main,[],[ AC_MSG_ERROR(Need ntl) ])
-#AX_CXX_CHECK_LIB(MTToolBox, [MTToolBox::prime_factors2_128_1], [],[ AC_MSG_ERROR(Need MTToolBox) ])
 AC_CHECK_LIB(gf2x, gf2x_mul)
 AC_CHECK_LIB(gmp, __gmpz_init)
+AC_CHECK_LIB(ntl, main,[],[ AC_MSG_ERROR(Need ntl) ])
+#AX_CXX_CHECK_LIB(MTToolBox, [MTToolBox::prime_factors2_128_1], [],[ AC_MSG_ERROR(Need MTToolBox) ])
 
 #AC_MSG_CHECKING(for std=-c++11)
 AC_LANG_SAVE
