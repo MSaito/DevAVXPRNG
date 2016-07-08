@@ -127,7 +127,7 @@ namespace MTToolBox {
             v.SetLength(2 * size);
             for (int i = 0; i < 2 * size; i++) {
                 sf.generate();
-                w256_t w = sf.getParityValue();
+                U w = sf.getParityValue();
                 v[i] = getBitOfPos(w, pos);
             }
             MinPolySeq(poly, v, size);

@@ -51,7 +51,8 @@ namespace MTToolBox {
      * upper n bit is on
      *
      */
-    static inline w256_t make_msb_mask(int n)
+    template<>
+    inline w256_t make_msb_mask(int n)
     {
         w256_t w;
         uint64_t mask = ~UINT64_C(0);

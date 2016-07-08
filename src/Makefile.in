@@ -14,6 +14,7 @@
 
 @SET_MAKE@
 
+
 VPATH = @srcdir@
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -88,7 +89,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = dSFMTAVX2dc$(EXEEXT) dSFMTAVX2eq$(EXEEXT)
+noinst_PROGRAMS = dSFMTAVX2dc$(EXEEXT) dSFMTAVX2eq$(EXEEXT) \
+	dSFMTAVX512Fdc$(EXEEXT) dSFMTAVX512Feq$(EXEEXT)
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -111,6 +113,12 @@ am__v_lt_1 =
 am_dSFMTAVX2eq_OBJECTS = dSFMTAVX2eq.$(OBJEXT)
 dSFMTAVX2eq_OBJECTS = $(am_dSFMTAVX2eq_OBJECTS)
 dSFMTAVX2eq_LDADD = $(LDADD)
+am_dSFMTAVX512Fdc_OBJECTS = dSFMTAVX512Fdc.$(OBJEXT) $(am__objects_1)
+dSFMTAVX512Fdc_OBJECTS = $(am_dSFMTAVX512Fdc_OBJECTS)
+dSFMTAVX512Fdc_LDADD = $(LDADD)
+am_dSFMTAVX512Feq_OBJECTS = dSFMTAVX512Feq.$(OBJEXT)
+dSFMTAVX512Feq_OBJECTS = $(am_dSFMTAVX512Feq_OBJECTS)
+dSFMTAVX512Feq_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -163,13 +171,16 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(dSFMTAVX2dc_SOURCES) $(dSFMTAVX2eq_SOURCES)
-DIST_SOURCES = $(dSFMTAVX2dc_SOURCES) $(dSFMTAVX2eq_SOURCES)
+SOURCES = $(dSFMTAVX2dc_SOURCES) $(dSFMTAVX2eq_SOURCES) \
+	$(dSFMTAVX512Fdc_SOURCES) $(dSFMTAVX512Feq_SOURCES)
+DIST_SOURCES = $(dSFMTAVX2dc_SOURCES) $(dSFMTAVX2eq_SOURCES) \
+	$(dSFMTAVX512Fdc_SOURCES) $(dSFMTAVX512Feq_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
+DATA = $(noinst_DATA)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) \
 	$(LISP)config.h.in
 # Read a list of newline-separated strings from the standard input,
@@ -313,12 +324,17 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-common_header = devavxprng.h w256.hpp
+common_header = devavxprng.h w256.hpp w512.hpp
+noinst_DATA = Makefile.private dSFMTAVX2dc_mpi.cpp dSFMTAVX512Fdc_mpi.cpp
 dSFMTAVX2dc_SOURCES = dSFMTAVX2dc.cpp dSFMTAVX2search.hpp \
 dSFMTAVX2dc.h AlgorithmDSFMTEquidistribution.hpp \
 AlgorithmCalcFixPoint.hpp Annihilate.hpp $(common_header)
 
 dSFMTAVX2eq_SOURCES = dSFMTAVX2eq.cpp
+dSFMTAVX512Fdc_SOURCES = dSFMTAVX512Fdc.cpp dSFMTAVX512Fsearch.hpp \
+dSFMTAVX512Fdc.h $(common_header)
+
+dSFMTAVX512Feq_SOURCES = dSFMTAVX512Feq.cpp
 AM_CXXFLAGS = -O2 -Wall -Wextra -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS
 AM_LDFLAGS = -lMTToolBox
 all: config.h
@@ -388,6 +404,14 @@ dSFMTAVX2eq$(EXEEXT): $(dSFMTAVX2eq_OBJECTS) $(dSFMTAVX2eq_DEPENDENCIES) $(EXTRA
 	@rm -f dSFMTAVX2eq$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(dSFMTAVX2eq_OBJECTS) $(dSFMTAVX2eq_LDADD) $(LIBS)
 
+dSFMTAVX512Fdc$(EXEEXT): $(dSFMTAVX512Fdc_OBJECTS) $(dSFMTAVX512Fdc_DEPENDENCIES) $(EXTRA_dSFMTAVX512Fdc_DEPENDENCIES) 
+	@rm -f dSFMTAVX512Fdc$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(dSFMTAVX512Fdc_OBJECTS) $(dSFMTAVX512Fdc_LDADD) $(LIBS)
+
+dSFMTAVX512Feq$(EXEEXT): $(dSFMTAVX512Feq_OBJECTS) $(dSFMTAVX512Feq_DEPENDENCIES) $(EXTRA_dSFMTAVX512Feq_DEPENDENCIES) 
+	@rm -f dSFMTAVX512Feq$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(dSFMTAVX512Feq_OBJECTS) $(dSFMTAVX512Feq_LDADD) $(LIBS)
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
@@ -396,6 +420,8 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dSFMTAVX2dc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dSFMTAVX2eq.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dSFMTAVX512Fdc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dSFMTAVX512Feq.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -508,7 +534,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS) config.h
+all-am: Makefile $(PROGRAMS) $(DATA) config.h
 installdirs:
 install: install-am
 install-exec: install-exec-am

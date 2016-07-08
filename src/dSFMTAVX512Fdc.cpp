@@ -1,9 +1,7 @@
 /**
- * @file dSFMTAVX2dc.cpp
- *
- * @brief The main function of parameter generator of dSFMTAVX2.
- *
+ * @file dSFMTAVX512Fdc.cpp
  */
+
 #include "devavxprng.h"
 #include <string>
 #include <sstream>
@@ -13,11 +11,11 @@
 #include <MTToolBox/AlgorithmEquidistribution.hpp>
 #include <MTToolBox/MersenneTwister64.hpp>
 #include <NTL/GF2X.h>
-#include "dSFMTAVX2search.hpp"
+#include "dSFMTAVX512Fsearch.hpp"
 #include "AlgorithmDSFMTEquidistribution.hpp"
 #include "Annihilate.hpp"
-#include "AlgorithmCalcFixpoint.hpp"
-#include "dSFMTAVX2dc.h"
+#include "AlgorithmCalcFixPoint.hpp"
+#include "dSFMTAVX512Fdc.h"
 
 using namespace std;
 using namespace MTToolBox;
@@ -31,10 +29,7 @@ using namespace NTL;
  */
 int search(options& opt, int count) {
     MersenneTwister64 mt(opt.seed);
-    dSFMTAVX2 g(opt.mexp);
-
-    g.setFixedSL1(19);
-    g.setFixed(true);
+    dSFMTAVX512F g(opt.mexp);
 
     cout << "seed = " << dec << opt.seed << endl;
     if (opt.verbose) {
@@ -45,10 +40,10 @@ int search(options& opt, int count) {
         g.setFixed(true);
         g.setFixedSL1(opt.fixedSL1);
     }
-    AlgorithmReducibleRecursionSearch<w256_t, uint64_t> ars(g, mt);
+    AlgorithmReducibleRecursionSearch<w512_t, uint64_t> ars(g, mt);
     int i = 0;
-    AlgorithmCalculateParity<w256_t, dSFMTAVX2> cp;
-    Annihilate<dSFMTAVX2, w256_t, uint64_t> annihilate;
+    AlgorithmCalculateParity<w512_t, dSFMTAVX512F> cp;
+    Annihilate<dSFMTAVX512F, w512_t, uint64_t> annihilate;
     cout << "# " << g.getHeaderString() << ", delta52"
          << endl;
     while (i < count) {
@@ -66,25 +61,27 @@ int search(options& opt, int count) {
             annihilate.getLCMPoly(characteristic, g);
             GF2X quotient = characteristic / irreducible;
             //cout << "deg quotient = " << dec << deg(quotient) << endl;
-            w256_t fixpoint
-                = calc_fixpoint<dSFMTAVX2, w256_t>(g, irreducible, quotient);
+            w512_t fixpoint
+                = calc_fixpoint<dSFMTAVX512F, w512_t>(g, irreducible, quotient);
             g.setFixPoint(fixpoint);
             cp.searchParity(g, irreducible);
-            w256_t seed = {{1, 0, 0, 0, 0, 0, 0, 0}};
+            w512_t seed = {{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,}};
             g.seed(seed);
             if (!annihilate.anni(g)) {
                 return -1;
             }
+            //annihilate<w512_t>(&g, quotient);
             int veq52[52];
             DSFMTInfo info;
-            info.bitSize = 256;
-            info.elementNo = 4;
+            info.bitSize = 512;
+            info.elementNo = 8;
             int delta52
-                = calc_dSFMT_equidistribution<w256_t, dSFMTAVX2>
+                = calc_dSFMT_equidistribution<w512_t, dSFMTAVX512F>
                 (g, veq52, 52, info, opt.mexp);
             cout << g.getParamString();
             cout << dec << delta52;
-            cout << "," << dec << veq52[51] << endl;
+            cout << "," << veq52[51] << endl;
+            //cout << endl;
             i++;
         } else {
             cout << "search failed" << endl;
@@ -95,19 +92,11 @@ int search(options& opt, int count) {
         time_t t = time(NULL);
         cout << "search end at " << ctime(&t) << endl;
     }
-    return i;
+    return 0;
 }
 
 static void output_help(string& pgm);
 
-/**
- * command line option parser
- * @param opt a structure to keep the result of parsing
- * @param argc number of command line arguments
- * @param argv command line arguments
- * @param start default start value
- * @return command line options have error, or not
- */
 bool parse_opt(options& opt, int argc, char **argv) {
     opt.verbose = false;
     opt.mexp = 0;
@@ -115,7 +104,8 @@ bool parse_opt(options& opt, int argc, char **argv) {
     opt.seed = (uint64_t)clock();
     opt.filename = "";
     opt.fixed = false;
-    opt.fixedSL1 = 19;
+    //opt.fixedSL1 = 19;
+    opt.fixedSL1 = 23;
     int c;
     bool error = false;
     string pgm = argv[0];
@@ -152,8 +142,6 @@ bool parse_opt(options& opt, int argc, char **argv) {
                     error = true;
                     cerr << "fixed sl1 must be a number" << endl;
                 }
-            } else {
-                opt.fixedSL1 = 19;
             }
             break;
         case 'v':
@@ -181,9 +169,9 @@ bool parse_opt(options& opt, int argc, char **argv) {
         error = true;
     } else {
         long mexp = strtol(argv[0], NULL, 10);
-        static const int allowed_mexp[] = {607, 1279, 2281, 3217, 4253, 4423,
-                                           9689, 9941, 11213, 19937,
-                                           21701, 44497, -1};
+        static const int allowed_mexp[] = {1279, 2281, 3217, 4253, 9941,
+                                           11213, 19937, 21701,
+                                           44497, -1};
         if (! errno) {
             bool found = false;
             for (int i = 0; allowed_mexp[i] > 0; i++) {
@@ -240,7 +228,7 @@ static void output_help(string& pgm) {
 "--count, -c count    Output count. The number of parameters to be outputted.\n"
 "--seed, -s seed      seed of randomness.\n"
 "--fixed, -x fixedSL  fix the parameter sl1 to given value.\n"
-"mexp                 mersenne exponent, 1279 or more.\n"
+"mexp                 mersenne exponent 2203 or more.\n"
         ;
     cerr << help_string1 << endl;
 }

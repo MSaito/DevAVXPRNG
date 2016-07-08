@@ -57,4 +57,12 @@
 #include <string>
 #include <MTToolBox/util.hpp>
 
+
+namespace MTToolBox {
+    template<typename T>
+        inline T make_msb_mask(int n)
+    {
+        return static_cast<T>(0);
+    }
+}
 #endif //  DEVAVXPRNG_H

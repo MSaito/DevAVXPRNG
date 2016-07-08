@@ -1,11 +1,9 @@
 #pragma once
-#ifndef DSFMTAVX2SEARCH_HPP
-#define DSFMTAVX2SEARCH_HPP
-
+#ifndef DSFMTAVX512FSEARCH_HPP
+#define DSFMTAVX512FSEARCH_HPP
 /**
- * @file dSFMTAVX2search.hpp
+ * @file dSFMTAVX512Fsearch.hpp
  *
- * see COPYING
  */
 
 #include "devavxprng.h"
@@ -13,64 +11,65 @@
 #include <MTToolBox/ReducibleGenerator.hpp>
 #include <MTToolBox/MersenneTwister64.hpp>
 #include <MTToolBox/util.hpp>
-//#include <cstring>
-#include "w256.hpp"
+#include "w512.hpp"
 
 /**
- * @namespace dSFMTAVX2
- * name space for dSFMTAVX2
+ * @namespace dSFMTAVX512F
+ * name space for dSFMTAVX512F
  */
 namespace MTToolBox {
     using namespace NTL;
     using namespace std;
 
     /**
-     * @class dSFMTAVX2_param
-     * @brief a class keeping parameters of dSFMTAVX2
+     * @class dSFMTAVX512F_param
+     * @brief a class keeping parameters of dSFMTAVX512F
      *
-     * This class keeps parameters of dSFMTAVX2, and has some
+     * This class keeps parameters of dSFMTAVX512F, and has some
      * method for outputting parameters.
      */
-    class dSFMTAVX2_param {
+    class dSFMTAVX512F_param {
     public:
         int mexp;
         int pos1;
         int sl1;
+        int sl2;
         int perm;
-        w256_t msk1;
-        w256_t fix1;
-        w256_t parity1;
+        w512_t msk1;
+        w512_t fix1;
+        w512_t parity1;
 
-        dSFMTAVX2_param() {
+        dSFMTAVX512F_param() {
             mexp = 0;
             pos1 = 0;
             sl1 = 0;
+            sl2 = 0;
             perm = 1;
             setZero(msk1);
             setZero(fix1);
             setZero(parity1);
         }
 
-        dSFMTAVX2_param(const dSFMTAVX2_param& src) {
+        dSFMTAVX512F_param(const dSFMTAVX512F_param& src) {
             mexp = src.mexp;
             pos1 = src.pos1;
             sl1 = src.sl1;
+            sl2 = src.sl2;
             perm = src.perm;
             msk1 = src.msk1;
             fix1 = src.fix1;
             parity1 = src.parity1;
         }
-
         /**
-         *
+         * This method is used in output.hpp.
          * @return header line of output.
          */
         const string get_header() const {
-            return "mexp, pos1, sl1, perm, msk, fix, parity";
+            return "mexp, pos1, sl1, sl2, perm, msk, fix, parity";
         }
 
         /**
-         *
+         * This method is used in output.hpp.
          * @return string of parameters
          */
         const string get_string() const {
@@ -78,6 +77,7 @@ namespace MTToolBox {
             ss << dec << mexp << ",";
             ss << dec << pos1 << ",";
             ss << dec << sl1 << ",";
+            ss << dec << sl2 << ",";
             ss << dec << perm << ",";
             ss << msk1 << ",";
             ss << fix1 << ",";
@@ -96,6 +96,7 @@ namespace MTToolBox {
             ss << "mexp:" << dec << mexp << endl;
             ss << "pos1:" << dec << pos1 << endl;
             ss << "sl1:" << dec << sl1 << endl;
+            ss << "sl2:" << dec << sl2 << endl;
             ss << "perm:" << dec << perm << endl;
             ss << "msk:" << msk1 << endl;
             ss << "fix:" << fix1 << endl;
@@ -114,23 +115,25 @@ namespace MTToolBox {
             para++;
             sl1 = strtoul(para, &para, 10);
             para++;
+            sl2 = strtoul(para, &para, 10);
+            para++;
             perm = strtoul(para, &para, 10);
             para++;
-            for (int i = 3; i >= 0; i--) {
+            for (int i = 7; i >= 0; i--) {
                 msk1.u64[i] = strtoull(para, &para, 16);
                 para++;
             }
             if (para >= str + len) {
                 return;
             }
-            for (int i = 3; i >= 0; i--) {
+            for (int i = 7; i >= 0; i--) {
                 fix1.u64[i] = strtoull(para, &para, 16);
                 para++;
             }
             if (para >= str + len) {
                 return;
             }
-            for (int i = 3; i >= 0; i--) {
+            for (int i = 7; i >= 0; i--) {
                 parity1.u64[i] = strtoull(para, &para, 16);
                 para++;
             }
@@ -138,27 +141,30 @@ namespace MTToolBox {
     };
 
     /**
-     * @class dSFMTAVX2
-     * @brief DSFMTAVX2 generator class used for dynamic creation
+     * @class dSFMTAVX512F
+     * @brief DSFMTAVX512F generator class used for dynamic creation
      *
-     * This class is one of the main class of DSFMTAVX2 dynamic creator.
-     * This class is designed to be called from programs in MTToolBox.
+     * This class is one of the main class of DSFMTAVX512F dynamic creator.
+     * This class is designed to be called from programs in MTToolBox,
+     * but is not a subclass of some abstract class.
+     * Instead, this class is passed to them as template parameters.
      */
-    class dSFMTAVX2 : public ReducibleGenerator<w256_t, uint64_t> {
+    class dSFMTAVX512F : public ReducibleGenerator<w512_t, uint64_t> {
     public:
         /**
          * Constructor by mexp.
          * @param mexp Mersenne Exponent
          */
-        dSFMTAVX2(int mexp) {
+        dSFMTAVX512F(int mexp) {
 #if defined(DEBUG)
-            cout << "dSFMTAVX2 constructor start" << endl;
+            cout << "dSFMTAVX512F constructor start" << endl;
 #endif
             size = (mexp - lung_size) / element_size + 1;
-            state = new w256_t[size];
+            state = new w512_t[size];
             param.mexp = mexp;
             param.pos1 = 0;
             param.sl1 = 0;
+            param.sl2 = 0;
             param.perm = 1;
             MTToolBox::setZero(param.msk1);
             MTToolBox::setZero(param.parity1);
@@ -172,7 +178,7 @@ namespace MTToolBox {
             fixedSL1 = 0;
         }
 
-        ~dSFMTAVX2() {
+        ~dSFMTAVX512F() {
             delete[] state;
         }
 
@@ -180,12 +186,12 @@ namespace MTToolBox {
          * The copy constructor.
          * @param src The origin of copy.
          */
-        dSFMTAVX2(const dSFMTAVX2& src) : param(src.param) {
+        dSFMTAVX512F(const dSFMTAVX512F& src) : param(src.param) {
 #if defined(DEBUG)
-            cout << "dSFMTAVX2 constructor start" << endl;
+            cout << "dSFMTAVX512F constructor start" << endl;
 #endif
             size = src.size;
-            state = new w256_t[size];
+            state = new w512_t[size];
             for (int i = 0; i < size; i++) {
                 state[i] = src.state[i];
             }
@@ -203,12 +209,12 @@ namespace MTToolBox {
          * Constructor by parameter.
          * @param src_param
          */
-        dSFMTAVX2(const dSFMTAVX2_param& src_param) : param(src_param) {
+        dSFMTAVX512F(const dSFMTAVX512F_param& src_param) : param(src_param) {
 #if defined(DEBUG)
-            cout << "dSFMTAVX2 constructor start" << endl;
+            cout << "dSFMTAVX512F constructor start" << endl;
 #endif
             size = (src_param.mexp - lung_size) / element_size + 1;
-            state = new w256_t[size];
+            state = new w512_t[size];
             for (int i = 0; i < size; i++) {
                 MTToolBox::setZero(state[i]);
             }
@@ -222,8 +228,8 @@ namespace MTToolBox {
             fixedSL1 = 0;
         }
 
-        EquidistributionCalculatable<w256_t, uint64_t> * clone() const {
-            return new dSFMTAVX2(*this);
+        EquidistributionCalculatable<w512_t, uint64_t> * clone() const {
+            return new dSFMTAVX512F(*this);
         }
 
         /**
@@ -231,25 +237,26 @@ namespace MTToolBox {
          * This initialization is simple.
          * @param seed seed for initialization
          */
-        void seed(w256_t seed) {
-            uint64_t * pstate = new uint64_t[(size + 1) * 4];
-            for (int i = 0; i < (size + 1) * 4; i++) {
+        void seed(w512_t seed) {
+            //setZero();
+            uint64_t * pstate = new uint64_t[(size + 1) * 8];
+            for (int i = 0; i < (size + 1) * 8; i++) {
                 pstate[i] = 0;
             }
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 8; i++) {
                 pstate[i] = seed.u64[i];
             }
-            for (int i = 1; i < (size + 1) * 4; i++) {
+            for (int i = 1; i < (size + 1) * 8; i++) {
                 pstate[i] ^= i + UINT64_C(6364136223846793005)
                     * (pstate[i - 1] ^ (pstate[i - 1] >> 62));
             }
             for (int i = 0; i < size; i++) {
-                for (int j = 0; j < 4; j++) {
-                    state[i].u64[j] = pstate[i * 4 + j];
+                for (int j = 0; j < 8; j++) {
+                    state[i].u64[j] = pstate[i * 8 + j];
                 }
             }
-            for (int i = 0; i < 4; i++) {
-                lung.u64[i] = pstate[size * 4 + i];
+            for (int i = 0; i < 8; i++) {
+                lung.u64[i] = pstate[size * 8 + i];
             }
             delete[] pstate;
             index = 0;
@@ -257,11 +264,11 @@ namespace MTToolBox {
             setup_prefix();
         }
 
-        void do_recursion(w256_t *r, w256_t *a, w256_t *b, w256_t *lung) {
+        void do_recursion(w512_t *r, w512_t *a, w512_t *b, w512_t *lung) {
             *lung = permutexvar_epi32(*lung, param.perm);
             *lung ^= *b;
             *lung ^= SL64(*a, param.sl1);
-            w256_t t;
+            w512_t t;
             t = SR64(*lung, sr1);
             t ^= *a;
             t ^= *lung & param.msk1;
@@ -283,19 +290,19 @@ namespace MTToolBox {
          * Important method, generate new random number
          * @return new pseudo random number
          */
-        w256_t generate() {
+        w512_t generate() {
             next_state();
-            w256_t r;
+            w512_t r;
             index = index % size;
             int p = (index + size - 1) % size;
             if (start_mode == 0) {
                 r = state[index];
             } else {
-                for (int i = 0; i < 4 - start_mode; i++) {
+                for (int i = 0; i < 8 - start_mode; i++) {
                     r.u64[i] = state[p].u64[i + start_mode];
                 }
                 int j = 0;
-                for (int i = 4 - start_mode; i < 4; i++) {
+                for (int i = 8 - start_mode; i < 8; i++) {
                     r.u64[i] = state[index].u64[j++];
                 }
             }
@@ -306,7 +313,7 @@ namespace MTToolBox {
                      << " p = " << dec << p << endl;
             }
 #endif
-            w256_t r2;
+            w512_t r2;
             if (weight_mode == max_weight_mode) {
                 r2 = r;
             } else {
@@ -345,32 +352,16 @@ namespace MTToolBox {
             return weight_mode;
         }
 
-        /**
-         * @param bit_len bit length from MSB or LSB
-         * @return generated numbers of bit_len
-         */
-        w256_t generate(int bit_len) {
-            w256_t w;
-#if 0
-            if (reverse_bit_flag) {
-                w = reverse_bit(generate());
-            } else {
-                w = generate();
-            }
-#endif
+        w512_t generate(int bit_len) {
+            w512_t w;
             w = generate();
-            w256_t mask = make_msb_mask<w256_t>(bit_len);
+            w512_t mask = make_msb_mask<w512_t>(bit_len);
             return w & mask;
         }
 
-        /**
-         * make parameters from given sequential number and
-         * internal id
-         * @param num sequential number
-         */
         void setUpParam(AbstractGenerator<uint64_t>& mt) {
 #if defined(DEBUG)
-            cout << "dSFMTAVX2 setUpParam start" << endl;
+            cout << "dSFMTAVX512Fsearch setUpParam start" << endl;
 #endif
             if (size == 2) {
                 param.pos1 = 1;
@@ -379,16 +370,18 @@ namespace MTToolBox {
             }
             if (fixed) {
                 param.sl1 = fixedSL1;
+                param.sl2 = 0;
             } else {
                 param.sl1 = mt.generate() % (52 - 1) + 1;
+                param.sl2 = 0;
             }
-            param.perm = (mt.generate() % 4) * 2 + 1;
-            for (int i = 0; i < 4; i++) {
+            param.perm = (mt.generate() % 8) * 2 + 1;
+            for (int i = 0; i < 8; i++) {
                 param.msk1.u64[i] = mt.generate() | mt.generate();
                 param.msk1.u64[i] &= UINT64_C(0x000fffffffffffff);
             }
 #if defined(DEBUG)
-            cout << "dSFMTAVX2 setUpParam end" << endl;
+            cout << "dSFMTAVX512F setUpParam end" << endl;
 #endif
         }
 
@@ -418,8 +411,7 @@ namespace MTToolBox {
             if (weight_mode == max_weight_mode) {
                 return true;
             } else {
-                for (int i = max_weight_mode - weight_mode;
-                     i < max_weight_mode;
+                for (int i = max_weight_mode - weight_mode; i < max_weight_mode;
                      i++) {
                     if (previous.u64[i] != 0) {
                         return false;
@@ -429,12 +421,12 @@ namespace MTToolBox {
             }
         }
 
-        void setParityValue(w256_t parity) {
+        void setParityValue(w512_t parity) {
             lung = parity;
             param.parity1 = parity;
         }
 
-        w256_t getParityValue() const {
+        w512_t getParityValue() const {
             return lung;
         }
 
@@ -442,22 +434,19 @@ namespace MTToolBox {
             setZero();
             if (bitPos < size * element_size) {
                 int idx = bitPos / element_size;
-                int p = (bitPos / 52) % 4;
+                int p = (bitPos / 52) % 8;
                 int r = bitPos % 52;
                 state[idx].u64[p] = UINT64_C(1) << r;
             } else {
                 bitPos = bitPos - size * element_size;
-                int p = (bitPos / 64) % 4;
+                int p = (bitPos / 64) % 8;
                 int r = bitPos % 64;
                 lung.u64[p] = UINT64_C(1) << r;
             }
         }
 
-        /**
-         * @param that DSFMTAVX2 generator added to this generator
-         */
-        void add(EquidistributionCalculatable<w256_t, uint64_t>& other) {
-            dSFMTAVX2 *that = dynamic_cast<dSFMTAVX2 *>(&other);
+        void add(EquidistributionCalculatable<w512_t, uint64_t>& other) {
+            dSFMTAVX512F *that = dynamic_cast<dSFMTAVX512F *>(&other);
             if (that == 0) {
                 throw std::invalid_argument(
                     "the adder should have same type as the addee.");
@@ -465,7 +454,7 @@ namespace MTToolBox {
             this->add(that);
         }
 
-        void add(const dSFMTAVX2 * that) {
+        void add(const dSFMTAVX512F * that) {
             for (int i = 0; i < size; i++) {
                 state[(i + index) % size]
                     ^= that->state[(i + that->index) % size];
@@ -504,7 +493,7 @@ namespace MTToolBox {
 
         void setConst() {
             const uint64_t high = UINT64_C(0x3ff0000000000000);
-            dSFMTAVX2 tmp(*this);
+            dSFMTAVX512F tmp(*this);
             tmp.setZero();
             tmp.setPrefix(high);
             tmp.setup_prefix();
@@ -516,7 +505,7 @@ namespace MTToolBox {
             setPrefix(0);
         }
 
-        bool equals(const dSFMTAVX2& that) {
+        bool equals(const dSFMTAVX512F& that) {
             if (lung != that.lung) {
                 return false;
             }
@@ -529,7 +518,7 @@ namespace MTToolBox {
             return true;
         }
 
-        void setFixPoint(const w256_t& fix) {
+        void setFixPoint(const w512_t& fix) {
             param.fix1 = fix;
         }
 
@@ -542,10 +531,10 @@ namespace MTToolBox {
         }
 
         int periodCertification(bool noFix = false) {
-            w256_t tmp;
-            w256_t parity;
+            w512_t tmp;
+            w512_t parity;
             parity = param.parity1;
-            w256_t fix;
+            w512_t fix;
             fix = param.fix1;
             if (noFix) {
                 tmp = lung & parity;
@@ -562,7 +551,7 @@ namespace MTToolBox {
                 lung.u64[0] ^= 1;
                 return 0;
             }
-            for (int i = 3; i >= 0; i--) {
+            for (int i = 7; i >= 0; i--) {
                 uint64_t work = 1;
                 for (int j = 0; j < 64; j++) {
                     if ((work & parity.u64[i]) != 0) {
@@ -581,36 +570,36 @@ namespace MTToolBox {
             fixedSL1 = value;
         }
     private:
-        dSFMTAVX2& operator=(const dSFMTAVX2&) {
+        dSFMTAVX512F& operator=(const dSFMTAVX512F&) {
             throw std::logic_error("can't assign");
         }
         void setup_prefix() {
             const uint64_t clear = UINT64_C(0x000fffffffffffff);
             for (int i = 0; i < size; i++) {
-                for (int j = 0; j < 4; j++) {
+                for (int j = 0; j < 8; j++) {
                     state[i].u64[j] &= clear;
                 }
             }
             if (prefix != 0) {
                 for (int i = 0; i < size; i++) {
-                    for (int j = 0; j < 4; j++) {
+                    for (int j = 0; j < 8; j++) {
                         state[i].u64[j] |= prefix;
                     }
                 }
             }
         }
-        enum {sr1 = 12, lung_size = 256, element_size = 208,
-              max_weight_mode = 4};
+        enum {sr1 = 12, lung_size = 512, element_size = 416,
+              max_weight_mode = 8};
         int fixedSL1;
         bool fixed;
         int size;
         int index;
         int start_mode;
         int weight_mode;
-        w256_t * state;
-        w256_t lung;
-        dSFMTAVX2_param param;
-        w256_t previous;
+        w512_t * state;
+        w512_t lung;
+        dSFMTAVX512F_param param;
+        w512_t previous;
         uint64_t prefix;
     };
 }
