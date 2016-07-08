@@ -1,6 +1,9 @@
 #pragma once
-#ifndef MTTOOLBOX_ALGORITHM_DSFMT_EQUIDISTRIBUTION_HPP
-#define MTTOOLBOX_ALGORITHM_DSFMT_EQUIDISTRIBUTION_HPP
+#ifndef MTTOOLBOX_ALGORITHM_SIMD_EQUIDISTRIBUTION_SIMPLE_HPP
+#define MTTOOLBOX_ALGORITHM_SIMD_EQUIDISTRIBUTION_SIMPLE_HPP
+/**
+ * @file AlgorithmSIMDEquidistribution.hpp
+ */
 
 #include "devavxprng.h"
 
@@ -13,7 +16,6 @@
 #else
 #pragma GCC error "do not have memory header"
 #endif
-
 #include <stdexcept>
 #include <MTToolBox/util.hpp>
 
@@ -24,8 +26,10 @@ namespace MTToolBox {
     using std::shared_ptr;
 #endif
 
-    struct DSFMTInfo {
+    struct SIMDInfo {
+        bool fastMode;
         int bitSize;
+        int bitMode;
         int elementNo;
     };
 
@@ -54,7 +58,7 @@ namespace MTToolBox {
      *\endenglish
      */
     template<typename U, typename SIMDGenerator>
-    class dsfmt_linear_generator_vector {
+    class simd_linear_generator_vector {
     public:
 
         /**
@@ -70,16 +74,18 @@ namespace MTToolBox {
          *\english
          *\endenglish
          */
-        dsfmt_linear_generator_vector<U, SIMDGenerator>(
+        simd_linear_generator_vector<U, SIMDGenerator>(
             const SIMDGenerator& generator,
-            DSFMTInfo& info)
+            SIMDInfo& info,
+            bool lsb = false)
             {
-                shared_ptr<SIMDGenerator> r(new SIMDGenerator(generator));
-                rand = r;
-                count = 0;
-                zero = false;
-                setZero(next);
-                this->info = info;
+            shared_ptr<SIMDGenerator> r(new SIMDGenerator(generator));
+            rand = r;
+            count = 0;
+            zero = false;
+            setZero(next);
+            this->info = info;
+            this->lsb = lsb;
         }
 
         /**
@@ -104,24 +110,26 @@ namespace MTToolBox {
          * 1, 0, 0, 0, ... or 8, 0, 0, 0, ...
          *\endenglish
          */
-        dsfmt_linear_generator_vector<U, SIMDGenerator>(
+        simd_linear_generator_vector<U, SIMDGenerator>(
             const SIMDGenerator& generator,
-            int bit_pos, DSFMTInfo& info) {
-            std::shared_ptr<SIMDGenerator> r(new SIMDGenerator(generator));
+            int bit_pos, SIMDInfo& info, bool lsb = false) {
+            shared_ptr<SIMDGenerator> r(new SIMDGenerator(generator));
             rand = r;
             rand->setZero();
             count = 0;
             zero = false;
+//            next = getOne<U>() << (bit_size<U>() - bit_pos - 1);
             setZero(next);
             setBitOfPos(&next, bit_size<U>() - bit_pos - 1, 1);
             this->info = info;
+            this->lsb = lsb;
 #if defined(DEBUG)
             cout << "DEBUG:" << dec << bit_pos << ":"
                  << hex << next << endl;
 #endif
         }
 
-        void add(const dsfmt_linear_generator_vector<U, SIMDGenerator>& src);
+        void add(const simd_linear_generator_vector<U, SIMDGenerator>& src);
         void get_next(int bit_len);
         void next_state(int bit_len);
         void debug_print();
@@ -173,7 +181,8 @@ namespace MTToolBox {
          *\endenglish
          */
         U next;
-        DSFMTInfo info;
+        SIMDInfo info;
+        bool lsb;
     };
 
     /**
@@ -198,7 +207,7 @@ namespace MTToolBox {
      *\endenglish
      */
     template<typename U, typename SIMDGenerator>
-    class AlgorithmDSFMTEquidistribution {
+    class AlgorithmSIMDEquidistribution {
 
         /**
          *\japanese
@@ -209,7 +218,7 @@ namespace MTToolBox {
          * Pseudo random number generator as a vector.
          *\endenglish
          */
-        typedef dsfmt_linear_generator_vector<U, SIMDGenerator> linear_vec;
+        typedef simd_linear_generator_vector<U, SIMDGenerator> linear_vec;
     public:
 
         /**
@@ -239,12 +248,13 @@ namespace MTToolBox {
          * of equi-distribution. This is first v of k(v).
          *\endenglish
          */
-        AlgorithmDSFMTEquidistribution(const SIMDGenerator& rand,
-                                              int bit_length,
-                                              DSFMTInfo info,
-                                              int maxbitsize) {
+        AlgorithmSIMDEquidistribution(const SIMDGenerator& rand,
+                                      int bit_length,
+                                      SIMDInfo info,
+                                      int maxbitsize,
+                                      bool lsb = false) {
 #if defined(DEBUG)
-            cout << "AlgorithmDSFMTEquidistribution constructer start" << endl;
+            cout << "AlgorithmSIMDEquidistribution constructer start" << endl;
             cout << "bit_length = " << dec << bit_length << endl;
 #endif
             int bit_len = bit_length;
@@ -257,15 +267,14 @@ namespace MTToolBox {
             basis = new linear_vec * [size];
             stateBitSize = maxbitsize;
             for (int i = 0; i < bit_size; i++) {
-                basis[i] = new linear_vec(rand, i, info);
+                basis[i] = new linear_vec(rand, i, info, lsb);
             }
-            basis[bit_size] = new linear_vec(rand, info);
+            basis[bit_size] = new linear_vec(rand, info, lsb);
             basis[bit_size]->next_state(bit_len);
 #if defined(DEBUG)
             cout << "zero = " << dec << basis[bit_size]->zero << endl;
             cout << "count = " << dec << basis[bit_size]->count << endl;
-            cout << "AlgorithmDSFMTEquidistribution constructer end"
-                 << endl;
+            cout << "AlgorithmSIMDEquidistribution constructer end" << endl;
 #endif
         }
 
@@ -277,7 +286,7 @@ namespace MTToolBox {
          * Destructor
          *\endenglish
          */
-        ~AlgorithmDSFMTEquidistribution() {
+        ~AlgorithmSIMDEquidistribution() {
             for (int i = 0; i < size; i++) {
                 delete basis[i];
             }
@@ -336,7 +345,7 @@ namespace MTToolBox {
          * Size of array \b basis.
          *\endenglish
          */
-        DSFMTInfo info;
+        SIMDInfo info;
         int size;
     };
 
@@ -350,7 +359,7 @@ namespace MTToolBox {
      *\endenglish
      */
     template<typename U, typename V>
-    void dsfmt_linear_generator_vector<U, V>::debug_print() {
+    void simd_linear_generator_vector<U, V>::debug_print() {
         using namespace std;
 
         cout << "count = " << dec << count;
@@ -359,7 +368,7 @@ namespace MTToolBox {
     }
 #else
     template<typename U, typename V>
-    void dsfmt_linear_generator_vector<U, V>::debug_print() {
+    void simd_linear_generator_vector<U, V>::debug_print() {
     }
 #endif
 
@@ -396,7 +405,7 @@ namespace MTToolBox {
      *\endenglish
      */
     template<typename U, typename V>
-    int AlgorithmDSFMTEquidistribution<U, V>::get_equidist(int bitLen)
+    int AlgorithmSIMDEquidistribution<U, V>::get_equidist(int bitLen)
     {
         using namespace std;
         return get_equidist_main(bitLen);
@@ -414,8 +423,8 @@ namespace MTToolBox {
      *\endenglish
      */
     template<typename U, typename SIMDGenerator>
-    void dsfmt_linear_generator_vector<U, SIMDGenerator>::add(
-        const dsfmt_linear_generator_vector<U, SIMDGenerator>& src) {
+    void simd_linear_generator_vector<U, SIMDGenerator>::add(
+        const simd_linear_generator_vector<U, SIMDGenerator>& src) {
         using namespace std;
 
         rand->add(*src.rand);
@@ -423,11 +432,11 @@ namespace MTToolBox {
     }
 
     /**
-     * nextを作る。
+     * weight を考慮してnextを作る。prev もセットする。
      *
      */
     template<typename U, typename SIMDGenerator>
-    void dsfmt_linear_generator_vector<U, SIMDGenerator>::get_next(int bitSize) {
+    void simd_linear_generator_vector<U, SIMDGenerator>::get_next(int bitSize) {
         using namespace std;
         U w = rand->generate();
 #if defined(DEBUG) && 0
@@ -436,16 +445,41 @@ namespace MTToolBox {
         bitSize = bitSize * info.elementNo;
         setZero(next);
         int k = info.bitSize - 1;
-        for (int i = 0; i < info.elementNo; i++) {
-            uint64_t mask = UINT64_C(0x0008000000000000);
-            for (int j = 0; j < bitSize; j += info.elementNo) {
-                if (w.u64[i] & mask) {
-                    setBitOfPos(&next, k, 1);
-                } else {
-                    setBitOfPos(&next, k, 0);
+        if (info.bitMode == 32) {
+            if (lsb) {
+                w.u[0] = reverse_bit(w.u[0]);
+                w.u[1] = reverse_bit(w.u[1]);
+                w.u[2] = reverse_bit(w.u[2]);
+                w.u[3] = reverse_bit(w.u[3]);
+            }
+            for (int i = 0; i < info.elementNo; i++) {
+                uint32_t mask = UINT32_C(0x80000000);
+                for (int j = 0; j < bitSize; j += info.elementNo) {
+                    if (w.u[i] & mask) {
+                        setBitOfPos(&next, k, 1);
+                    } else {
+                        setBitOfPos(&next, k, 0);
+                    }
+                    k--;
+                    mask = mask >> 1;
                 }
-                k--;
-                mask = mask >> 1;
+            }
+        } else {
+            if (lsb) {
+                w.u64[0] = reverse_bit(w.u64[0]);
+                w.u64[1] = reverse_bit(w.u64[1]);
+            }
+            for (int i = 0; i < info.elementNo; i++) {
+                uint64_t mask = UINT64_C(0x8000000000000000);
+                for (int j = 0; j < bitSize; j += info.elementNo) {
+                    if (w.u64[i] & mask) {
+                        setBitOfPos(&next, k, 1);
+                    } else {
+                        setBitOfPos(&next, k, 0);
+                    }
+                    k--;
+                    mask = mask >> 1;
+                }
             }
         }
 #if defined(DEBUG)
@@ -475,7 +509,7 @@ namespace MTToolBox {
      *\endenglish
      */
     template<typename U, typename V>
-    void dsfmt_linear_generator_vector<U, V>::next_state(int bitLen) {
+    void simd_linear_generator_vector<U, V>::next_state(int bitLen) {
         using namespace std;
 
         if (zero) {
@@ -515,7 +549,7 @@ namespace MTToolBox {
      *\endenglish
      */
     template<typename U, typename SIMDGenerator>
-    int AlgorithmDSFMTEquidistribution<U, SIMDGenerator>::
+    int AlgorithmSIMDEquidistribution<U, SIMDGenerator>::
     get_equidist_main(int v)
     {
         using namespace std;
@@ -659,16 +693,26 @@ namespace MTToolBox {
     }
 
     template<typename U, typename SIMDGenerator>
-    int calc_dSFMT_equidistribution(const SIMDGenerator& rand,
+    int calc_SIMD_equidistribution(const SIMDGenerator& rand,
                                    int veq[],
                                    int bit_len,
-                                   DSFMTInfo& info,
-                                   int mexp)
+                                   SIMDInfo& info,
+                                   int mexp,
+                                   bool lsb = false)
     {
-        int state_inc = 1;
-        int weight_max = info.elementNo;
+        int state_inc;
+        int weight_max = info.bitSize / 32;
         int state_max = weight_max;
+        if (info.bitMode == 32) {
+            state_inc = 1;
+        } else {
+            state_inc = 2;
+        }
         int weight_dec = state_inc;
+        int weight_start = weight_dec;
+        if (info.fastMode) {
+            weight_start = weight_max;
+        }
         for (int i = 0; i < bit_len; i++) {
             veq[i] = INT_MAX;
         }
@@ -677,29 +721,27 @@ namespace MTToolBox {
             for (int i = 0; i < bit_len; i++) {
                 veq_weight[i] = -1;
             }
-            for (int wm = weight_dec; wm <= weight_max; wm += weight_dec) {
+            for (int wm = weight_start; wm <= weight_max; wm += weight_dec) {
 #if 0
                 cout << "start_mode = " << dec << sm;
                 cout << " weight_mode = " << dec << wm << endl;
 #endif
-                //SIMDGenerator work = rand;
-                //work.setStartMode(sm);
-                //work.setWeightMode(wm);
-                // previous set
-                //work.generate();
+                SIMDGenerator work = rand;
+                work.setStartMode(sm);
+                work.setWeightMode(wm);
+                work.generate();
                 for (int v = 1; v <= bit_len; v++) {
-                    SIMDGenerator work = rand;
-                    work.setStartMode(sm);
-                    work.setWeightMode(wm);
-                    // previous set
-                    work.generate();
-                    AlgorithmDSFMTEquidistribution<U, SIMDGenerator>
-                        ase(work, v, info, rand.bitSize());
+                    AlgorithmSIMDEquidistribution<U, SIMDGenerator>
+                        ase(work, v, info, rand.bitSize(), lsb);
                     int e = ase.get_equidist(v);
 #if 0
                     cout << "min_count = " << dec << e;
 #endif
-                    e = e * info.elementNo - (info.elementNo - wm);
+                    if (info.bitMode == 32) {
+                        e = e * info.elementNo - (info.elementNo - wm);
+                    } else { // 64
+                        e = e * info.elementNo - (info.elementNo - wm / 2);
+                    }
                     if (e > mexp / v) {
                         cerr << "over theoretical bound" << endl;
                         cout << "start_mode = " << dec << sm;
@@ -735,4 +777,4 @@ namespace MTToolBox {
 
 }
 #undef MTTOOLBOX_USE_TR1
-#endif // MTTOOLBOX_ALGORITHM_DSFMT_EQUIDISTRIBUTION_HPP
+#endif // MTTOOLBOX_ALGORITHM_EQUIDISTRIBUTION_HPP

@@ -89,7 +89,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = dSFMTAVX2dc$(EXEEXT) dSFMTAVX2eq$(EXEEXT) \
-	dSFMTAVX512Fdc$(EXEEXT) dSFMTAVX512Feq$(EXEEXT)
+	dSFMTAVX512Fdc$(EXEEXT) dSFMTAVX512Feq$(EXEEXT) \
+	SFMTAVX512Fdc$(EXEEXT) SFMTAVX512Feq$(EXEEXT)
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -102,13 +103,19 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 am__objects_1 =
-am_dSFMTAVX2dc_OBJECTS = dSFMTAVX2dc.$(OBJEXT) $(am__objects_1)
-dSFMTAVX2dc_OBJECTS = $(am_dSFMTAVX2dc_OBJECTS)
-dSFMTAVX2dc_LDADD = $(LDADD)
+am_SFMTAVX512Fdc_OBJECTS = SFMTAVX512Fdc.$(OBJEXT) $(am__objects_1)
+SFMTAVX512Fdc_OBJECTS = $(am_SFMTAVX512Fdc_OBJECTS)
+SFMTAVX512Fdc_LDADD = $(LDADD)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+am_SFMTAVX512Feq_OBJECTS = SFMTAVX512Feq.$(OBJEXT)
+SFMTAVX512Feq_OBJECTS = $(am_SFMTAVX512Feq_OBJECTS)
+SFMTAVX512Feq_LDADD = $(LDADD)
+am_dSFMTAVX2dc_OBJECTS = dSFMTAVX2dc.$(OBJEXT) $(am__objects_1)
+dSFMTAVX2dc_OBJECTS = $(am_dSFMTAVX2dc_OBJECTS)
+dSFMTAVX2dc_LDADD = $(LDADD)
 am_dSFMTAVX2eq_OBJECTS = dSFMTAVX2eq.$(OBJEXT)
 dSFMTAVX2eq_OBJECTS = $(am_dSFMTAVX2eq_OBJECTS)
 dSFMTAVX2eq_LDADD = $(LDADD)
@@ -170,9 +177,11 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(dSFMTAVX2dc_SOURCES) $(dSFMTAVX2eq_SOURCES) \
+SOURCES = $(SFMTAVX512Fdc_SOURCES) $(SFMTAVX512Feq_SOURCES) \
+	$(dSFMTAVX2dc_SOURCES) $(dSFMTAVX2eq_SOURCES) \
 	$(dSFMTAVX512Fdc_SOURCES) $(dSFMTAVX512Feq_SOURCES)
-DIST_SOURCES = $(dSFMTAVX2dc_SOURCES) $(dSFMTAVX2eq_SOURCES) \
+DIST_SOURCES = $(SFMTAVX512Fdc_SOURCES) $(SFMTAVX512Feq_SOURCES) \
+	$(dSFMTAVX2dc_SOURCES) $(dSFMTAVX2eq_SOURCES) \
 	$(dSFMTAVX512Fdc_SOURCES) $(dSFMTAVX512Feq_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
@@ -322,7 +331,9 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-EXTRA_DIST = Makefile.private dSFMTAVX2dc_mpi.cpp dSFMTAVX512Fdc_mpi.cpp
+EXTRA_DIST = Makefile.private dSFMTAVX2dc_mpi.cpp dSFMTAVX512Fdc_mpi.cpp \
+SFMTAVX512Fdc_mpi.cpp
+
 common_header = devavxprng.h w256.hpp w512.hpp
 dSFMTAVX2dc_SOURCES = dSFMTAVX2dc.cpp dSFMTAVX2search.hpp \
 dSFMTAVX2dc.h AlgorithmDSFMTEquidistribution.hpp \
@@ -333,6 +344,10 @@ dSFMTAVX512Fdc_SOURCES = dSFMTAVX512Fdc.cpp dSFMTAVX512Fsearch.hpp \
 dSFMTAVX512Fdc.h $(common_header)
 
 dSFMTAVX512Feq_SOURCES = dSFMTAVX512Feq.cpp
+SFMTAVX512Fdc_SOURCES = SFMTAVX512Fdc.cpp SFMTAVX512Fsearch.hpp \
+SFMTAVX512Fdc.h $(common_header)
+
+SFMTAVX512Feq_SOURCES = SFMTAVX512Feq.cpp
 AM_CXXFLAGS = -O2 -Wall -Wextra -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS
 AM_LDFLAGS = -lMTToolBox
 all: config.h
@@ -394,6 +409,14 @@ clean-noinstPROGRAMS:
 	echo " rm -f" $$list; \
 	rm -f $$list
 
+SFMTAVX512Fdc$(EXEEXT): $(SFMTAVX512Fdc_OBJECTS) $(SFMTAVX512Fdc_DEPENDENCIES) $(EXTRA_SFMTAVX512Fdc_DEPENDENCIES) 
+	@rm -f SFMTAVX512Fdc$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(SFMTAVX512Fdc_OBJECTS) $(SFMTAVX512Fdc_LDADD) $(LIBS)
+
+SFMTAVX512Feq$(EXEEXT): $(SFMTAVX512Feq_OBJECTS) $(SFMTAVX512Feq_DEPENDENCIES) $(EXTRA_SFMTAVX512Feq_DEPENDENCIES) 
+	@rm -f SFMTAVX512Feq$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(SFMTAVX512Feq_OBJECTS) $(SFMTAVX512Feq_LDADD) $(LIBS)
+
 dSFMTAVX2dc$(EXEEXT): $(dSFMTAVX2dc_OBJECTS) $(dSFMTAVX2dc_DEPENDENCIES) $(EXTRA_dSFMTAVX2dc_DEPENDENCIES) 
 	@rm -f dSFMTAVX2dc$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(dSFMTAVX2dc_OBJECTS) $(dSFMTAVX2dc_LDADD) $(LIBS)
@@ -416,6 +439,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SFMTAVX512Fdc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SFMTAVX512Feq.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dSFMTAVX2dc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dSFMTAVX2eq.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dSFMTAVX512Fdc.Po@am__quote@
