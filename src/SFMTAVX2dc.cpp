@@ -1,6 +1,8 @@
 /**
- * @file SFMTAVX512Fdc.cpp
+ * @file SFMTAVX2dc.cpp
+ *
  */
+
 #include "devavxprng.h"
 #include <string>
 #include <sstream>
@@ -10,10 +12,10 @@
 #include <MTToolBox/AlgorithmEquidistribution.hpp>
 #include <MTToolBox/MersenneTwister.hpp>
 #include <NTL/GF2X.h>
-#include "SFMTAVX512Fsearch.hpp"
+#include "SFMTAVX2search.hpp"
 #include "AlgorithmSIMDEquidistribution.hpp"
 #include "Annihilate.hpp"
-#include "SFMTAVX512Fdc.h"
+#include "SFMTAVX2dc.h"
 
 using namespace std;
 using namespace MTToolBox;
@@ -27,20 +29,20 @@ using namespace NTL;
  */
 int search(options& opt, int count) {
     MersenneTwister mt(opt.seed);
-    SFMTAVX512F g(opt.mexp);
-
+    SFMTAVX2 g(opt.mexp);
     if (opt.fixed) {
         g.setFixed(true);
     }
+
     cout << "seed = " << dec << opt.seed << endl;
     if (opt.verbose) {
         time_t t = time(NULL);
         cout << "search start at " << ctime(&t);
     }
-    AlgorithmReducibleRecursionSearch<w512_t, uint32_t> ars(g, mt);
+    AlgorithmReducibleRecursionSearch<w256_t, uint32_t> ars(g, mt);
     int i = 0;
-    AlgorithmCalculateParity<w512_t, SFMTAVX512F> cp;
-    Annihilate<SFMTAVX512F, w512_t, uint32_t> annihilate;
+    AlgorithmCalculateParity<w256_t, SFMTAVX2> cp;
+    Annihilate<SFMTAVX2, w256_t, uint32_t> annihilate;
     cout << "# " << g.getHeaderString() << ", delta32, delta64"
          << endl;
     while (i < count) {
@@ -48,42 +50,33 @@ int search(options& opt, int count) {
             GF2X irreducible = ars.getIrreducibleFactor();
             GF2X characteristic = ars.getCharacteristicPolynomial();
             GF2X quotient = characteristic / irreducible;
-            //cout << "deg irreducible = " << dec << deg(irreducible) << endl;
-            //cout << "deg characteristic = " << dec << deg(characteristic)
-            //     << endl;
-            //cout << "deg quotient = " << dec << deg(quotient) << endl;
             if (deg(irreducible) != opt.mexp) {
                 cout << "error" << endl;
                 return -1;
             }
             cp.searchParity(g, irreducible);
 #if 1
-            w512_t seed = {{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
+            w256_t seed = {{1, 0, 0, 0, 0, 0, 0, 0}};
             g.seed(seed);
             if (!annihilate.anni(g)) {
                 return -1;
             }
-            //annihilate<w512_t>(&g, quotient);
-            //AlgorithmReducibleEquidistribution<w512_t, SFMTAVX512F, uint32_t>
-            //    re(g, irreducible, 512);
-            //AlgorithmEquidistribution<w512_t, uint32_t> re(g, 512, opt.mexp);
             int delta32 = 0;
             int delta64 = 0;
-            //delta512 = re.get_all_equidist(veq);
             int veq32[32];
             SIMDInfo info;
             info.bitMode = 32;
-            info.elementNo = 16;
-            info.bitSize = 512;
+            info.elementNo = 8;
+            info.bitSize = 256;
             info.fastMode = true;
             delta32
-                = calc_SIMD_equidistribution<w512_t, SFMTAVX512F>
+                = calc_SIMD_equidistribution<w256_t, SFMTAVX2>
                 (g, veq32, 32, info, opt.mexp);
             int veq64[64];
             info.bitMode = 64;
-            info.elementNo = 8;
+            info.elementNo = 4;
             delta64
-                = calc_SIMD_equidistribution<w512_t, SFMTAVX512F>
+                = calc_SIMD_equidistribution<w256_t, SFMTAVX2>
                 (g, veq64, 64, info, opt.mexp);
 #endif
             cout << g.getParamString();
@@ -114,9 +107,9 @@ static void output_help(string& pgm);
  */
 bool parse_opt(options& opt, int argc, char **argv) {
     opt.verbose = false;
-    opt.fixed = false;
     opt.mexp = 0;
     opt.count = 1;
+    opt.fixed = false;
     opt.seed = (uint64_t)clock();
     opt.filename = "";
     int c;
@@ -124,9 +117,9 @@ bool parse_opt(options& opt, int argc, char **argv) {
     string pgm = argv[0];
     static struct option longopts[] = {
         {"verbose", no_argument, NULL, 'v'},
-        {"fixed", no_argument, NULL, 'x'},
         {"file", required_argument, NULL, 'f'},
         {"count", required_argument, NULL, 'c'},
+        {"fixed", no_argument, NULL, 'x'},
         {"seed", required_argument, NULL, 's'},
         {NULL, 0, NULL, 0}};
     errno = 0;
@@ -174,7 +167,7 @@ bool parse_opt(options& opt, int argc, char **argv) {
         error = true;
     } else {
         long mexp = strtol(argv[0], NULL, 10);
-        static const int allowed_mexp[] = {1279, 2281, 3217, 4253, 4423,
+        static const int allowed_mexp[] = {607, 1279, 2281, 3217, 4253, 4423,
                                            9689, 9941, 11213, 19937,
                                            21701, 23209, 44497, -1};
         if (! errno) {
