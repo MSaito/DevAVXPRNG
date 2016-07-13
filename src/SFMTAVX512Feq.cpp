@@ -42,46 +42,52 @@ int main(int argc, char * argv[])
     int delta64 = 0;
     bool lsb = false;
     const char * lsb_str = "";
+#if 0
     if (opt.reverse) {
         sf.set_reverse_bit();
         lsb = true;
         cout << "Equidistribution from LSB" << endl;
         lsb_str = " from LSB";
     }
-    //AlgorithmEquidistribution<w512_t, uint32_t> re(sf, 512, opt.params.mexp);
+#endif
     SIMDInfo info;
     info.bitSize = 512;
-    int veq32[32];
-    info.bitMode = 32;
-    info.elementNo = 16;
-    info.fastMode = true;
+    info.fastMode = false;
     sf.reset_reverse_bit();
-    delta32 = calc_SIMD_equidistribution<w512_t, SFMTAVX512F>
-        (sf, veq32, 32, info, opt.params.mexp, lsb);
-    cout << "delta32 = " << dec << delta32 << endl;
-    int veq64[64];
     info.bitMode = 64;
     info.elementNo = 8;
-    delta64 = calc_SIMD_equidistribution<w512_t, SFMTAVX512F>
-        (sf, veq64, 64, info, opt.params.mexp, lsb);
-    cout << sf.getParamString();
-    cout << dec << delta32 << "," << delta64 << endl;
+    if (opt.verbose) {
+        cout << "64bit dimension of equidistribution at v-bit accuracy k(v)"
+             << lsb_str << endl;
+    }
+    for (int v = 1; v <= 64; v++) {
+        int veq = calc_SIMD_equidist<w512_t, SFMTAVX512F>
+            (v, sf, info, opt.params.mexp, lsb);
+        int d = opt.params.mexp / v - veq;
+        if (opt.verbose) {
+            cout << "k(" << dec << v << ") = " << dec << veq;
+            cout << "\td(" << dec << v << ") = " << dec << d << endl;
+        }
+        delta64 += d;
+    }
+    info.bitMode = 32;
+    info.elementNo = 16;
     if (opt.verbose) {
         cout << "32bit dimension of equidistribution at v-bit accuracy k(v)"
              << lsb_str << endl;
-        for (int j = 0; j < 32; j++) {
-            cout << "k(" << dec << (j + 1) << ") = " << dec << veq32[j];
-            cout << "\td(" << dec << (j + 1) << ") = " << dec
-                 << (opt.params.mexp / (j + 1) - veq32[j]) << endl;
-        }
-        cout << "64bit dimension of equidistribution at v-bit accuracy k(v)"
-             << lsb_str << endl;
-        for (int j = 0; j < 64; j++) {
-            cout << "k(" << dec << (j + 1) << ") = " << dec << veq64[j];
-            cout << "\td(" << dec << (j + 1) << ") = " << dec
-                 << (opt.params.mexp / (j + 1) - veq64[j]) << endl;
-        }
     }
+    for (int v = 1; v <= 32; v++) {
+        int veq = calc_SIMD_equidist<w512_t, SFMTAVX512F>
+            (v, sf, info, opt.params.mexp, lsb);
+        int d = opt.params.mexp / v - veq;
+        if (opt.verbose) {
+            cout << "k(" << dec << v << ") = " << dec << veq;
+            cout << "\td(" << dec << v << ") = " << dec << d << endl;
+        }
+        delta32 += d;
+    }
+    cout << sf.getParamString();
+    cout << dec << delta32 << "," << delta64 << endl;
     return 0;
 }
 

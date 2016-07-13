@@ -61,7 +61,7 @@ int main(int argc, char * argv[])
              << lsb_str << endl;
     }
     for (int v = 1; v <= 64; v++) {
-        int veq = calc_SIMD_equidistribution<w256_t, SFMTAVX2, uint32_t>
+        int veq = calc_SIMD_equidist<w256_t, SFMTAVX2>
             (v, sf, info, opt.params.mexp, lsb);
         int d = opt.params.mexp / v - veq;
         if (opt.verbose) {
@@ -79,7 +79,7 @@ int main(int argc, char * argv[])
              << lsb_str << endl;
     }
     for (int v = 1; v <= 32; v++) {
-        int veq = calc_SIMD_equidistribution<w256_t, SFMTAVX2, uint32_t>
+        int veq = calc_SIMD_equidist<w256_t, SFMTAVX2>
             (v, sf, info, opt.params.mexp, lsb);
         int d = opt.params.mexp / v - veq;
         if (opt.verbose) {
