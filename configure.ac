@@ -10,6 +10,10 @@ AM_INIT_AUTOMAKE
 
 AC_CANONICAL_HOST
 
+AC_ARG_ENABLE([mpi],
+        AS_HELP_STRING([--enable-mpi], [make open mpi search executables]))
+AM_CONDITIONAL([MPI], [test x$enable_mpi = xyes])
+
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
@@ -35,12 +39,18 @@ AC_CHECK_LIB(ntl, main,[],[ AC_MSG_ERROR(Need ntl) ])
 #AC_MSG_CHECKING(for std=-c++11)
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
-AX_CHECK_COMPILE_FLAG([-std=c++11], [AX_APPEND_FLAG([-std=c++11], [CXXFLAGS])])
+AX_CHECK_COMPILE_FLAG([-std=c++11], [ac_cv_cpp11=yes], [ac_cv_cpp11=no])
+if test $ac_cv_cpp11 = yes; then
+   AX_APPEND_FLAG([-std=c++11], [CXXFLAGS])
+else
+  AX_CHECK_COMPILE_FLAG([-std=c++0x],
+  [AX_APPEND_FLAG([-std=c++0x], [CXXFLAGS])])
+fi
 AC_LANG_RESTORE
 
 # Checks for library functions.
 #AC_CHECK_FUNCS([strtoull _may_i_use_cpu_feature __builtin_cpu_supports])
-AC_MSG_CHECKING(for ac_may_i_use_cpu_feature)
+AC_MSG_CHECKING(for _may_i_use_cpu_feature)
 AC_DEFINE(HAVE_MAY_I_USE_CPU_FEATURE, [0],
 [Define to 1 if you have _may_i_use_cpu_feature function])
 AC_CACHE_VAL(ac_cv_may_i_use_cpu_feature,
@@ -54,7 +64,7 @@ if test $ac_cv_may_i_use_cpu_feature = yes; then
   [Define to 1 if you have _may_i_use_cpu_feature function])
 fi
 
-AC_MSG_CHECKING(for ac_builtin_cpu_supports)
+AC_MSG_CHECKING(for __builtin_cpu_supports)
 AC_DEFINE(HAVE_BUILTIN_CPU_SUPPORTS, [0],
 [Define to 1 if you have __builtin_cpu_supports function])
 AC_CACHE_VAL(ac_cv_builtin_cpu_supports,
@@ -68,7 +78,7 @@ if test $ac_cv_builtin_cpu_supports = yes; then
   [Define to 1 if you have __builtin_cpu_supports function])
 fi
 
-AC_MSG_CHECKING(for ac_builtin_parityll)
+AC_MSG_CHECKING(for __builtin_parityll)
 AC_DEFINE(HAVE_BUILTIN_PARITYLL, [0],
 [Define to 1 if you have __builtin_parityll function])
 AC_CACHE_VAL(ac_cv_builtin_parityll,
@@ -128,37 +138,28 @@ for flag in $CXXFLAGS; do
   fi
 done
 
-AC_MSG_CHECKING(for ac_builtin_parityll)
-AC_DEFINE(HAVE_BUILTIN_PARITYLL, [0],
-  [Define to 1 if you have __builtin_parityll function])
-AC_CACHE_VAL(ac_cv_builtin_parityll,
-AC_TRY_COMPILE([],
- [__builtin_parityll(0)],
- ac_cv_builtin_parityll=yes,
- ac_cv_builtin_parityll=no))
-AC_MSG_RESULT($ac_cv_builtin_parityll)
-if test $ac_cv_builtin_parityll = yes; then
-  AC_DEFINE(HAVE_BUILTIN_PARITYLL, [1],
-  [Define to 1 if you have __builtin_parityll function])
-fi
-
-AC_DEFINE(HAVE_MEMORY, [0], [Define to 1 if you have <memory> header file])
-AC_DEFINE(HAVE_TR1_MEMORY, [0],
-         [Define to 1 if you have <tr1/memory> header file])
+AC_DEFINE(HAVE_STD_SP, [0], [Define to 1 if you have std::shared_ptr])
+AC_DEFINE(HAVE_STD_TR1_SP, [0], [Define to 1 if you have std::tr1::shared_ptr])
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
-AC_TRY_COMPILE([#include <memory>],[return 0;],
-ac_cv_cxx_have_memory=yes, ac_cv_cxx_have_memory=no)
-AC_TRY_COMPILE([#include <tr1/memory>],[return 0;],
-ac_cv_cxx_have_tr1_memory=yes, ac_cv_cxx_have_tr1_memory=no)
+AC_MSG_CHECKING(for std::shared_ptr)
+AC_TRY_COMPILE([#include <memory>],
+[std::shared_ptr<void> sp;return 0;],
+ac_cv_cxx_have_std_sp=yes, ac_cv_cxx_have_std_sp=no)
+AC_MSG_RESULT($ac_cv_cxx_have_std_sp)
+AC_MSG_CHECKING(for std::tr1::shared_ptr)
+AC_TRY_COMPILE([#include <tr1/memory>],
+[std::tr1::shared_ptr<void> sp;return 0;],
+ac_cv_cxx_have_std_tr1_sp=yes, ac_cv_cxx_have_std_tr1_sp=no)
+AC_MSG_RESULT($ac_cv_cxx_have_std_tr1_sp)
 AC_LANG_RESTORE
-if test $ac_cv_cxx_have_memory = yes; then
-  AC_DEFINE(HAVE_MEMORY, [1],
-  [Define to 1 if you have <memory> header file])
+if test $ac_cv_cxx_have_std_sp = yes; then
+  AC_DEFINE(HAVE_STD_SP, [1],
+  [Define to 1 if you have std::shared_ptr])
 fi
-if test $ac_cv_cxx_have_tr1_memory = yes; then
-  AC_DEFINE(HAVE_TR1_MEMORY, [1],
-  [Define to 1 if you have <tr1/memory> header file])
+if test $ac_cv_cxx_have_std_tr1_sp = yes; then
+  AC_DEFINE(HAVE_STD_TR1_SP, [1],
+  [Define to 1 if you have std::tr1::shared_ptr])
 fi
 
 

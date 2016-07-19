@@ -42,9 +42,6 @@
 /* Define to 1 if you have _may_i_use_cpu_feature function */
 #undef HAVE_MAY_I_USE_CPU_FEATURE
 
-/* Define to 1 if you have <memory> header file */
-#undef HAVE_MEMORY
-
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
@@ -66,6 +63,12 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
+/* Define to 1 if you have std::shared_ptr */
+#undef HAVE_STD_SP
+
+/* Define to 1 if you have std::tr1::shared_ptr */
+#undef HAVE_STD_TR1_SP
+
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
 
@@ -80,9 +83,6 @@
 
 /* Define to 1 if you have the <time.h> header file. */
 #undef HAVE_TIME_H
-
-/* Define to 1 if you have <tr1/memory> header file */
-#undef HAVE_TR1_MEMORY
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H

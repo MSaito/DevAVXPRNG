@@ -4,24 +4,22 @@
 
 #include "devavxprng.h"
 
-#if HAVE_MEMORY
-#define MTTOOLBOX_USE_TR1 0
+#if HAVE_STD_SP
 #include <memory>
-#elif HAVE_TR1_MEMORY
-#define MTTOOLBOX_USE_TR1 1
+#elif HAVE_STD_TR1_SP
 #include <tr1/memory>
 #else
-#pragma GCC error "do not have memory header"
+#pragma GCC error "do not have shared_ptr"
 #endif
 
 #include <stdexcept>
 #include <MTToolBox/util.hpp>
 
 namespace MTToolBox {
-#if MTTOOLBOX_USE_TR1
-    using std::tr1::shared_ptr;
-#else
+#if HAVE_STD_SP
     using std::shared_ptr;
+#else
+    using std::tr1::shared_ptr;
 #endif
 
     struct DSFMTInfo {
@@ -107,7 +105,7 @@ namespace MTToolBox {
         dsfmt_linear_generator_vector<U, SIMDGenerator>(
             const SIMDGenerator& generator,
             int bit_pos, DSFMTInfo& info) {
-            std::shared_ptr<SIMDGenerator> r(new SIMDGenerator(generator));
+            shared_ptr<SIMDGenerator> r(new SIMDGenerator(generator));
             rand = r;
             rand->setZero();
             count = 0;
@@ -658,6 +656,67 @@ namespace MTToolBox {
         return result;
     }
 
+
+    template<typename U, typename SIMDGenerator>
+    int calc_dSFMT_equidist(int v,
+                            const SIMDGenerator& rand,
+                            DSFMTInfo& info,
+                            int mexp)
+    {
+        using namespace std;
+        int state_inc = 1;
+        int weight_max = info.elementNo;
+        int state_max = weight_max;
+        int weight_dec = state_inc;
+        int weight_start = weight_dec;
+        int veq = INT_MAX;
+        int veq_weight = -1;
+
+        // select least veq in start modes
+        for (int sm = 0; sm < state_max; sm += state_inc) {
+            // select largest veq in weight modes
+            for (int wm = weight_start; wm <= weight_max; wm += weight_dec) {
+#if 0
+                cout << "start_mode = " << dec << sm;
+                cout << " weight_mode = " << dec << wm << endl;
+#endif
+                SIMDGenerator work = rand;
+                work.setStartMode(sm);
+                work.setWeightMode(wm);
+                // previous set
+                work.generate();
+                AlgorithmDSFMTEquidistribution<U, SIMDGenerator>
+                    ase(work, v, info, rand.bitSize());
+                int e = ase.get_equidist(v);
+#if 0
+                cout << "min_count = " << dec << e;
+#endif
+                e = e * info.elementNo - (info.elementNo - wm);
+                if (e > mexp / v) {
+                    cerr << "over theoretical bound" << endl;
+                    cout << "start_mode = " << dec << sm;
+                    cout << " weight_mode = " << dec << wm;
+                    cout << " mexp = " << dec << mexp;
+                    cout << " e = " << dec << e;
+                    cout << " v = " << dec << v << endl;
+                    throw new std::logic_error("over theoretical bound");
+                }
+#if 0
+                cout << "\tk(" << dec << v << ") = " << dec
+                     << e << endl;
+#endif
+                // max
+                if (e > veq_weight) {
+                    veq_weight = e;
+                }
+            }
+            if (veq_weight < veq) {
+                veq = veq_weight;
+            }
+        }
+        return veq;
+    }
+
     template<typename U, typename SIMDGenerator>
     int calc_dSFMT_equidistribution(const SIMDGenerator& rand,
                                    int veq[],
@@ -665,74 +724,13 @@ namespace MTToolBox {
                                    DSFMTInfo& info,
                                    int mexp)
     {
-        int state_inc = 1;
-        int weight_max = info.elementNo;
-        int state_max = weight_max;
-        int weight_dec = state_inc;
-        for (int i = 0; i < bit_len; i++) {
-            veq[i] = INT_MAX;
-        }
-        int veq_weight[bit_len];
-        for (int sm = 0; sm < state_max; sm += state_inc) {
-            for (int i = 0; i < bit_len; i++) {
-                veq_weight[i] = -1;
-            }
-            for (int wm = weight_dec; wm <= weight_max; wm += weight_dec) {
-#if 0
-                cout << "start_mode = " << dec << sm;
-                cout << " weight_mode = " << dec << wm << endl;
-#endif
-                //SIMDGenerator work = rand;
-                //work.setStartMode(sm);
-                //work.setWeightMode(wm);
-                // previous set
-                //work.generate();
-                for (int v = 1; v <= bit_len; v++) {
-                    SIMDGenerator work = rand;
-                    work.setStartMode(sm);
-                    work.setWeightMode(wm);
-                    // previous set
-                    work.generate();
-                    AlgorithmDSFMTEquidistribution<U, SIMDGenerator>
-                        ase(work, v, info, rand.bitSize());
-                    int e = ase.get_equidist(v);
-#if 0
-                    cout << "min_count = " << dec << e;
-#endif
-                    e = e * info.elementNo - (info.elementNo - wm);
-                    if (e > mexp / v) {
-                        cerr << "over theoretical bound" << endl;
-                        cout << "start_mode = " << dec << sm;
-                        cout << " weight_mode = " << dec << wm;
-                        cout << " mexp = " << dec << mexp;
-                        cout << " e = " << dec << e;
-                        cout << " v = " << dec << v << endl;
-                        throw new std::logic_error("over theoretical bound");
-                    }
-#if 0
-                    cout << "\tk(" << dec << v << ") = " << dec
-                         << e << endl;
-#endif
-                    // max
-                    if (e > veq_weight[v - 1]) {
-                        veq_weight[v - 1] = e;
-                    }
-                }
-            }
-            for (int i = 0; i < bit_len; i++) {
-                // min
-                if (veq[i] > veq_weight[i]) {
-                    veq[i] = veq_weight[i];
-                }
-            }
-        }
         int sum = 0;
-        for (int i = 1; i <= bit_len; i++) {
-            sum += mexp / i - veq[i - 1];
+        for (int i = 0; i < bit_len; i++) {
+            veq[i] = calc_dSFMT_equidist<U, SIMDGenerator>(i, rand, info, mexp);
+            sum += mexp / (i + 1) - veq[i];
         }
         return sum;
     }
 
 }
-#undef MTTOOLBOX_USE_TR1
 #endif // MTTOOLBOX_ALGORITHM_DSFMT_EQUIDISTRIBUTION_HPP

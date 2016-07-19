@@ -2,9 +2,7 @@
 #ifndef DSFMTAVX512FDC_H
 #define DSFMTAVX512FDC_H
 
-#include <stdint.h>
-#include <inttypes.h>
-#include <string>
+#include "devavxprng.h"
 
 class options {
 public:

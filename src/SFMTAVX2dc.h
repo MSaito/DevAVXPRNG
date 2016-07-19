@@ -2,8 +2,7 @@
 #ifndef SFMTAVX2DC_H
 #define SFMTAVX2DC_H
 
-#include <stdint.h>
-#include <string>
+#include "devavxprng.h"
 
 class options {
 public:

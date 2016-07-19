@@ -1,6 +1,6 @@
 #! /bin/sh
 # Generated automatically by config.status (devavxprng) 0.0.1
-# Libtool was configured on host saimac.local:
+# Libtool was configured on host Mac-mini.local:
 # NOTE: Changes made to this file will be lost: look at ltmain.sh.
 
 # Provide generalized library-building support services.

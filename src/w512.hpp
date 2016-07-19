@@ -1,3 +1,4 @@
+#pragma once
 #ifndef W512_HPP
 #define W512_HPP
 
@@ -7,12 +8,8 @@
  * @brief 512-bit LITTLE ENDIAN class
  */
 
-#include <iostream>
-#include <iomanip>
+#include "devavxprng.h"
 #include <MTToolBox/util.hpp>
-#include <stdint.h>
-#include <stdlib.h>
-#include <inttypes.h>
 
 namespace MTToolBox {
     using namespace NTL;
@@ -72,16 +69,6 @@ namespace MTToolBox {
         }
         return w;
     }
-
-#if 0
-    static inline w512_t and_mask(w512_t a, w512_t b) {
-        w512_t w;
-        for (int i = 0; i < 8; i++) {
-            w.u64[i] = a.u64[i] & b.u64[i];
-        }
-        return w;
-    }
-#endif
 
     template<>
     inline w512_t getOne() {
@@ -150,47 +137,6 @@ namespace MTToolBox {
         return c;
     }
 
-#if 0
-    inline const w512_t operator>>(w512_t x, int s) {
-        w512_t r;
-        if (s == 0) {
-            r = x;
-            return r;
-        } else if (s == 64) {
-            r.u64[0] = x.u64[1];
-            r.u64[1] = 0;
-        } else if (s >= 64) {
-            s = s - 64;
-            r.u64[0] = x.u64[1] >> s;
-            r.u64[1] = 0;
-        } else {
-            uint64_t w = x.u64[1] << (64 - s);
-            r.u64[1] = x.u64[1] >> s;
-            r.u64[0] = w | (x.u64[0] >> s);
-        }
-        return r;
-    }
-
-    inline const w512_t operator<<(w512_t x, int s) {
-        w512_t r;
-        if (s == 0) {
-            r = x;
-            return r;
-        } else if (s == 64) {
-            r.u64[1] = x.u64[0];
-            r.u64[0] = 0;
-        } else if (s > 64) {
-            s = s - 64;
-            r.u64[1] = x.u64[0] << s;
-            r.u64[0] = 0;
-        } else {
-            uint64_t w = x.u64[0] >> (64 - s);
-            r.u64[0] = x.u64[0] << s;
-            r.u64[1] = w | (x.u64[1] << s);
-        }
-        return r;
-    }
-#endif
 
     inline const w512_t operator&(w512_t x, w512_t y) {
         w512_t r;
@@ -199,23 +145,6 @@ namespace MTToolBox {
         }
         return r;
     }
-
-#if 0
-    inline const w512_t operator^(w512_t x, w512_t y) {
-        w512_t r = x;
-        r.u64[0] ^= y.u64[0];
-        r.u64[1] ^= y.u64[1];
-        return r;
-    }
-
-    inline const w512_t operator~(w512_t x) {
-        w512_t r;
-        for (int i = 0; i < 8; i++) {
-            r.u64[i] = ~x.u64[i];
-        }
-        return r;
-    }
-#endif
 
     inline w512_t& operator|=(w512_t& x, w512_t y) {
         for (int i = 0; i < 8; i++) {

@@ -1,58 +1,30 @@
+#pragma once
 #ifndef MTTOOLBOX_ALGORITHM_SIMD_EQUIDISTRIBUTION_SIMPLE_HPP
 #define MTTOOLBOX_ALGORITHM_SIMD_EQUIDISTRIBUTION_SIMPLE_HPP
 /**
  * @file AlgorithmSIMDEquidistribution.hpp
- *
- *\japanese
- * @brief 疑似乱数生成器の出力の均等分布次元を計算する。
- *
- * PIS法[1](原瀬)によって疑似乱数生成器の出力の均等分布次元を計算するアルゴリズム
- *\endjapanese
- *
- *\english
- * @brief Calculate dimension of equi-distribution of output of pseudo
- * random number generators.
- *
- * Algorithm that calculates dimension of equi-distribution of output
- * of pseudo random number generators using PIS method[1](S. Harase).
- *\endenglish
- *
- * @author Mutsuo Saito (Manieth Corp.)
- * @author Makoto Matsumoto (Hiroshima University)
- *
- * Copyright (C) 2015 Mutsuo Saito, Makoto Matsumoto, Manieth Corp
- * and Hiroshima University.
- * All rights reserved.
- *
- * The 3-clause BSD License is applied to this software, see
- * LICENSE.txt
- *
- * [1] S. Harase. An efficient lattice reduction method for F2-linear
- * pseudorandom number generators using Mulders and Storjohann
- * algorithm. Journal of Computational and Applied Mathematics,
- * 236(2):141–149, August 2011. doi:10.1016/j.cam.2011.06.005.
  */
-#if __cplusplus >= 201103L
+
+#include "devavxprng.h"
+
+#if HAVE_STD_SP
 #include <memory>
-#else
-#if defined(__clang__)
-#if __has_include(<tr1/memory>)
-#define MTTOOLBOX_USE_TR1
+#elif HAVE_STD_TR1_SP
 #include <tr1/memory>
 #else
-#include <memory>
-#endif // __has_indlude
-#else  // not clang
-#define MTTOOLBOX_USE_TR1
-#include <tr1/memory>
-#endif // clang
-#endif // cplusplus version
+#pragma GCC error "do not have shared_ptr"
+#endif
+
 #include <stdexcept>
-//#include <MTToolBox/EquidistributionCalculatable.hpp>
 #include <MTToolBox/util.hpp>
-#include <limits.h>
 
 namespace MTToolBox {
+#if HAVE_STD_SP
+    using std::shared_ptr;
+#else
+    using std::tr1::shared_ptr;
+#endif
+
     struct SIMDInfo {
         bool fastMode;
         int bitSize;
@@ -106,11 +78,7 @@ namespace MTToolBox {
             SIMDInfo& info,
             bool lsb = false)
             {
-#if defined(MTTOOLBOX_USE_TR1)
-            std::tr1::shared_ptr<SIMDGenerator> r(new SIMDGenerator(generator));
-#else
-            std::shared_ptr<SIMDGenerator> r(new SIMDGenerator(generator));
-#endif
+            shared_ptr<SIMDGenerator> r(new SIMDGenerator(generator));
             rand = r;
             count = 0;
             zero = false;
@@ -147,11 +115,7 @@ namespace MTToolBox {
         simd_linear_generator_vector<U, SIMDGenerator>(
             const SIMDGenerator& generator,
             int bit_pos, SIMDInfo& info, bool lsb = false) {
-#if defined(MTTOOLBOX_USE_TR1)
-            std::tr1::shared_ptr<SIMDGenerator> r(new SIMDGenerator(generator));
-#else
-            std::shared_ptr<SIMDGenerator> r(new SIMDGenerator(generator));
-#endif
+            shared_ptr<SIMDGenerator> r(new SIMDGenerator(generator));
             rand = r;
             rand->setZero();
             count = 0;
@@ -184,11 +148,7 @@ namespace MTToolBox {
          * A GF(2) linear pseudo random number generator
          *\endenglish
          */
-#if defined(MTTOOLBOX_USE_TR1)
-        std::tr1::shared_ptr<SIMDGenerator> rand;
-#else
-        std::shared_ptr<SIMDGenerator> rand;
-#endif
+        shared_ptr<SIMDGenerator> rand;
         /**
          *\japanese
          * next_state() が呼ばれた回数
@@ -780,90 +740,6 @@ namespace MTToolBox {
         return result;
     }
 
-    template<typename U, typename SIMDGenerator>
-    int calc_SIMD_equidistribution(const SIMDGenerator& rand,
-                                   int veq[],
-                                   int bit_len,
-                                   SIMDInfo& info,
-                                   int mexp,
-                                   bool lsb = false)
-    {
-        using namespace std;
-        int state_inc;
-        int weight_max = info.bitSize / 32;
-        int state_max = weight_max;
-        if (info.bitMode == 32) {
-            state_inc = 1;
-        } else {
-            state_inc = 2;
-        }
-        int weight_dec = state_inc;
-        int weight_start = weight_dec;
-        if (info.fastMode) {
-            weight_start = weight_max;
-        }
-        for (int i = 0; i < bit_len; i++) {
-            veq[i] = INT_MAX;
-        }
-        int veq_weight[bit_len];
-        for (int sm = 0; sm < state_max; sm += state_inc) {
-            for (int i = 0; i < bit_len; i++) {
-                veq_weight[i] = -1;
-            }
-            for (int wm = weight_start; wm <= weight_max; wm += weight_dec) {
-#if 0
-                cout << "start_mode = " << dec << sm;
-                cout << " weight_mode = " << dec << wm << endl;
-#endif
-                SIMDGenerator work = rand;
-                work.setStartMode(sm);
-                work.setWeightMode(wm);
-                work.generate();
-                for (int v = 1; v <= bit_len; v++) {
-                    AlgorithmSIMDEquidistribution<U, SIMDGenerator>
-                        ase(work, v, info, rand.bitSize(), lsb);
-                    int e = ase.get_equidist(v);
-#if 0
-                    cout << "min_count = " << dec << e;
-#endif
-                    if (info.bitMode == 32) {
-                        e = e * info.elementNo - (info.elementNo - wm);
-                    } else { // 64
-                        e = e * info.elementNo - (info.elementNo - wm / 2);
-                    }
-                    if (e > mexp / v) {
-                        cerr << "over theoretical bound" << endl;
-                        cout << "start_mode = " << dec << sm;
-                        cout << " weight_mode = " << dec << wm;
-                        cout << " mexp = " << dec << mexp;
-                        cout << " e = " << dec << e;
-                        cout << " v = " << dec << v << endl;
-                        throw new std::logic_error("over theoretical bound");
-                    }
-#if 0
-                    cout << "\tk(" << dec << v << ") = " << dec
-                         << e << endl;
-#endif
-                    // max
-                    if (e > veq_weight[v - 1]) {
-                        veq_weight[v - 1] = e;
-                    }
-                }
-            }
-            for (int i = 0; i < bit_len; i++) {
-                // min
-                if (veq[i] > veq_weight[i]) {
-                    veq[i] = veq_weight[i];
-                }
-            }
-        }
-        int sum = 0;
-        for (int i = 1; i <= bit_len; i++) {
-            sum += mexp / i - veq[i - 1];
-        }
-        return sum;
-    }
-
     // v を指定してそこだけ求める
     template<typename U, typename SIMDGenerator>
     int calc_SIMD_equidist(int v,
@@ -939,8 +815,23 @@ namespace MTToolBox {
         }
         return veq;
     }
+
+    template<typename U, typename SIMDGenerator>
+    int calc_SIMD_equidistribution(const SIMDGenerator& rand,
+                                   int veq[],
+                                   int bit_len,
+                                   SIMDInfo& info,
+                                   int mexp,
+                                   bool lsb = false)
+    {
+        int sum = 0;
+        for (int i = 0; i < bit_len; i++) {
+            veq[i] = calc_SIMD_equidist<U, SIMDGenerator>(i, rand, info,
+                                                          mexp, lsb);
+            sum += mexp / (i + 1) - veq[i];
+        }
+        return sum;
+    }
+
 }
-#if defined(MTTOOLBOX_USE_TR1)
-#undef MTTOOLBOX_USE_TR1
-#endif
 #endif // MTTOOLBOX_ALGORITHM_EQUIDISTRIBUTION_HPP
