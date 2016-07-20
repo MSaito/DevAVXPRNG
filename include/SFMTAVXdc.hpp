@@ -1,8 +1,8 @@
 #pragma once
-#ifndef SFMTAVX512FDC_HPP
-#define SFMTAVX512FDC_HPP
+#ifndef SFMTAVXDC_HPP
+#define SFMTAVXDC_HPP
 /**
- * @file SFMTAVX512Fdc.cpp
+ * @file SFMTAVXdc.hpp
  */
 #include "devavxprng.h"
 #include <MTToolBox/AlgorithmReducibleRecursionSearch.hpp>
@@ -10,25 +10,23 @@
 #include <MTToolBox/AlgorithmEquidistribution.hpp>
 #include <MTToolBox/MersenneTwister.hpp>
 #include <NTL/GF2X.h>
-#include "SFMTAVX512Fsearch.hpp"
 #include "AlgorithmSIMDEquidistribution.hpp"
 #include "Annihilate.hpp"
 #include "DCOptions.hpp"
 
 namespace MTToolBox {
-    void output_help(std::string& pgm);
-
     /**
      * search parameters using all_in_one function in the file search_all.hpp
      * @param opt command line options
      * @param count number of parameters user requested
      * @return 0 if this ends normally
      */
+    template<typename U, typename G, int bitWidth>
     int search(DCOptions& opt, int count) {
         using namespace std;
         using namespace NTL;
         MersenneTwister mt(opt.seed);
-        SFMTAVX512F g(opt.mexp);
+        G g(opt.mexp);
 
         if (opt.fixed) {
             g.setFixed(true);
@@ -38,10 +36,10 @@ namespace MTToolBox {
             time_t t = time(NULL);
             cout << "search start at " << ctime(&t);
         }
-        AlgorithmReducibleRecursionSearch<w512_t, uint32_t> ars(g, mt);
+        AlgorithmReducibleRecursionSearch<U, uint32_t> ars(g, mt);
         int i = 0;
-        AlgorithmCalculateParity<w512_t, SFMTAVX512F> cp;
-        Annihilate<SFMTAVX512F, w512_t, uint32_t> annihilate;
+        AlgorithmCalculateParity<U, G> cp;
+        Annihilate<G, U, uint32_t> annihilate;
         cout << "# " << g.getHeaderString() << ", delta32, delta64"
              << endl;
         while (i < count) {
@@ -50,14 +48,21 @@ namespace MTToolBox {
                 GF2X characteristic = ars.getCharacteristicPolynomial();
                 GF2X quotient = characteristic / irreducible;
                 if (deg(irreducible) != opt.mexp) {
-                    cout << "error" << endl;
+                    cout << "error not erreducible" << endl;
                     return -1;
                 }
+#if 0
+                cout << "before parity" << endl;
+#endif
                 cp.searchParity(g, irreducible);
-                w512_t seed = {{1, 0, 0, 0, 0, 0, 0, 0,
-                                0, 0, 0, 0, 0, 0, 0, 0}};
+                U seed;
+                setBitOfPos(&seed, 0, 1);
                 g.seed(seed);
+#if 0
+                cout << "before annihilate" << endl;
+#endif
                 if (!annihilate.anni(g)) {
+                    cout << "error can't annihilate" << endl;
                     return -1;
                 }
                 int delta32 = 0;
@@ -65,17 +70,29 @@ namespace MTToolBox {
                 int veq32[32];
                 SIMDInfo info;
                 info.bitMode = 32;
-                info.elementNo = 16;
-                info.bitSize = 512;
+                info.elementNo = bitWidth / 32;
+                info.bitSize = bitWidth;
                 info.fastMode = true;
+#if 0
+                cout << "bitMode:" << dec << info.bitMode << endl;
+                cout << "elementNo:" << dec << info.elementNo << endl;
+                cout << "bitSize:" << dec << info.bitSize << endl;
+                cout << "fastmode:" << info.fastMode << endl;
+#endif
                 delta32
-                    = calc_SIMD_equidistribution<w512_t, SFMTAVX512F>
+                    = calc_SIMD_equidistribution<U, G>
                     (g, veq32, 32, info, opt.mexp);
                 int veq64[64];
                 info.bitMode = 64;
-                info.elementNo = 8;
+                info.elementNo = bitWidth / 64;
+#if 0
+                cout << "bitMode:" << dec << info.bitMode << endl;
+                cout << "elementNo:" << dec << info.elementNo << endl;
+                cout << "bitSize:" << dec << info.bitSize << endl;
+                cout << "fastmode:" << info.fastMode << endl;
+#endif
                 delta64
-                    = calc_SIMD_equidistribution<w512_t, SFMTAVX512F>
+                    = calc_SIMD_equidistribution<U, G>
                     (g, veq64, 64, info, opt.mexp);
                 cout << g.getParamString();
                 cout << dec << delta32 << "," << delta64;
@@ -94,4 +111,4 @@ namespace MTToolBox {
     }
 
 }
-#endif // SFMTAVX512FDC_HPP
+#endif // SFMTAVXDC_HPP

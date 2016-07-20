@@ -726,7 +726,8 @@ namespace MTToolBox {
     {
         int sum = 0;
         for (int i = 0; i < bit_len; i++) {
-            veq[i] = calc_dSFMT_equidist<U, SIMDGenerator>(i, rand, info, mexp);
+            veq[i] = calc_dSFMT_equidist<U, SIMDGenerator>(i + 1, rand,
+                                                           info, mexp);
             sum += mexp / (i + 1) - veq[i];
         }
         return sum;

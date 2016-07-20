@@ -19,7 +19,6 @@ namespace MTToolBox {
         bool verbose;
         bool fixed;
         uint64_t seed;
-        std::string filename;
         long count;
         int min_mexp;
 
@@ -28,11 +27,20 @@ namespace MTToolBox {
             verbose = false;
             fixed = false;
             seed = (uint64_t)clock();
-            filename = "";
             count = 1;
             this->min_mexp = min_mexp;
         }
-
+#if 1
+        void d_p() {
+            using namespace std;
+            cout << "mexp:" << dec << mexp << endl;
+            cout << "verbose:" << verbose << endl;
+            cout << "fixed:" << fixed << endl;
+            cout << "seed:" << dec << seed << endl;
+            cout << "count:" << dec << count << endl;
+            cout << "min_mexp:" << dec << min_mexp << endl;
+        }
+#endif
         /**
          * command line option parser
          * @param opt a structure to keep the result of parsing
@@ -74,9 +82,6 @@ namespace MTToolBox {
                     break;
                 case 'x':
                     fixed = true;
-                    break;
-                case 'f':
-                    filename = optarg;
                     break;
                 case 'c':
                     count = strtoll(optarg, NULL, 10);
@@ -126,7 +131,7 @@ namespace MTToolBox {
                     }
                     cerr << endl;
                 }
-                mexp = mexp;
+                this->mexp = mexp;
             }
             if (error) {
                 output_help(pgm);
@@ -144,7 +149,6 @@ namespace MTToolBox {
             cerr << "usage:" << endl;
             cerr << pgm
                  << " [-s seed] [-v] [-c count]"
-                 << " [-f outputfile]"
                  << " [-x]"
                  << " mexp"
                  << endl;
