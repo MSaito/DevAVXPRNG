@@ -377,7 +377,7 @@ namespace MTToolBox {
             } else {
                 param.pos1 = mt.generate() % (size - 2) + 1;
             }
-            if (fixed) {
+            if (fixed && fixedSL1 > 0) {
                 param.sl1 = fixedSL1;
             } else {
                 param.sl1 = mt.generate() % (52 - 1) + 1;

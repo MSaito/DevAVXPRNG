@@ -33,7 +33,6 @@ namespace MTToolBox {
         int mexp;
         int pos1;
         int sl1;
-        int sl2;
         int perm;
         w512_t msk1;
         w512_t fix1;
@@ -43,7 +42,6 @@ namespace MTToolBox {
             mexp = 0;
             pos1 = 0;
             sl1 = 0;
-            sl2 = 0;
             perm = 1;
             setZero(msk1);
             setZero(fix1);
@@ -54,7 +52,6 @@ namespace MTToolBox {
             mexp = src.mexp;
             pos1 = src.pos1;
             sl1 = src.sl1;
-            sl2 = src.sl2;
             perm = src.perm;
             msk1 = src.msk1;
             fix1 = src.fix1;
@@ -65,7 +62,7 @@ namespace MTToolBox {
          * @return header line of output.
          */
         const string get_header() const {
-            return "mexp, pos1, sl1, sl2, perm, msk, fix, parity";
+            return "mexp, pos1, sl1, perm, msk, fix, parity";
         }
 
         /**
@@ -77,7 +74,6 @@ namespace MTToolBox {
             ss << dec << mexp << ",";
             ss << dec << pos1 << ",";
             ss << dec << sl1 << ",";
-            ss << dec << sl2 << ",";
             ss << dec << perm << ",";
             ss << msk1 << ",";
             ss << fix1 << ",";
@@ -96,7 +92,6 @@ namespace MTToolBox {
             ss << "mexp:" << dec << mexp << endl;
             ss << "pos1:" << dec << pos1 << endl;
             ss << "sl1:" << dec << sl1 << endl;
-            ss << "sl2:" << dec << sl2 << endl;
             ss << "perm:" << dec << perm << endl;
             ss << "msk:" << msk1 << endl;
             ss << "fix:" << fix1 << endl;
@@ -114,8 +109,6 @@ namespace MTToolBox {
             pos1 = strtoul(para, &para, 10);
             para++;
             sl1 = strtoul(para, &para, 10);
-            para++;
-            sl2 = strtoul(para, &para, 10);
             para++;
             perm = strtoul(para, &para, 10);
             para++;
@@ -164,7 +157,6 @@ namespace MTToolBox {
             param.mexp = mexp;
             param.pos1 = 0;
             param.sl1 = 0;
-            param.sl2 = 0;
             param.perm = 1;
             MTToolBox::setZero(param.msk1);
             MTToolBox::setZero(param.parity1);
@@ -368,12 +360,10 @@ namespace MTToolBox {
             } else {
                 param.pos1 = mt.generate() % (size - 2) + 1;
             }
-            if (fixed) {
+            if (fixed && fixedSL1 > 0) {
                 param.sl1 = fixedSL1;
-                param.sl2 = 0;
             } else {
                 param.sl1 = mt.generate() % (52 - 1) + 1;
-                param.sl2 = 0;
             }
             param.perm = (mt.generate() % 8) * 2 + 1;
             for (int i = 0; i < 8; i++) {

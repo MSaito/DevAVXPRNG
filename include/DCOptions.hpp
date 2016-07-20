@@ -18,6 +18,7 @@ namespace MTToolBox {
         int mexp;
         bool verbose;
         bool fixed;
+        int fixedValue;
         uint64_t seed;
         long count;
         int min_mexp;
@@ -26,6 +27,7 @@ namespace MTToolBox {
             mexp = 0;
             verbose = false;
             fixed = false;
+            fixedValue = -1;
             seed = (uint64_t)clock();
             count = 1;
             this->min_mexp = min_mexp;
@@ -36,6 +38,7 @@ namespace MTToolBox {
             cout << "mexp:" << dec << mexp << endl;
             cout << "verbose:" << verbose << endl;
             cout << "fixed:" << fixed << endl;
+            cout << "fixedValue:" << dec << fixedValue << endl;
             cout << "seed:" << dec << seed << endl;
             cout << "count:" << dec << count << endl;
             cout << "min_mexp:" << dec << min_mexp << endl;
@@ -56,13 +59,13 @@ namespace MTToolBox {
             string pgm = argv[0];
             static struct option longopts[] = {
                 {"verbose", no_argument, NULL, 'v'},
-                {"fixed", no_argument, NULL, 'x'},
+                {"fixed", optional_argument, NULL, 'x'},
                 {"count", required_argument, NULL, 'c'},
                 {"seed", required_argument, NULL, 's'},
                 {NULL, 0, NULL, 0}};
             errno = 0;
             for (;;) {
-                c = getopt_long(argc, argv, "vxs:c:", longopts, NULL);
+                c = getopt_long(argc, argv, "vs:c:x::", longopts, NULL);
                 if (error) {
                     break;
                 }
@@ -82,6 +85,13 @@ namespace MTToolBox {
                     break;
                 case 'x':
                     fixed = true;
+                    if (optarg != NULL) {
+                        fixedValue = strtoull(optarg, NULL, 0);
+                        if (errno) {
+                            error = true;
+                            cerr << "fixed value must be a number" << endl;
+                        }
+                    }
                     break;
                 case 'c':
                     count = strtoll(optarg, NULL, 10);
