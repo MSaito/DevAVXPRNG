@@ -1,15 +1,15 @@
 /**
- * SFMTAVX2dc-mpi.cpp
+ * SFMTAVX512Fdc-mpi.cpp
  */
+#include "devavxprng.h"
 #include <mpi.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <stdio.h>
 #include <errno.h>
-#include <stdlib.h>
-#include "SFMTAVX2dc.h"
+#include "SFMTAVX512Fdc.hpp"
 
 int main(int argc, char *argv[]) {
+    using namespace MTToolBox;
     int rank;
     int num_process;
     // MPI_Status status;

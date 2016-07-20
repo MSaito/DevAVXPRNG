@@ -1,14 +1,14 @@
 /**
- * SFMTAVX512Fdc-mpi.cpp
+ * SFMTAVX2dc-mpi.cpp
  */
 #include "devavxprng.h"
 #include <mpi.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <errno.h>
-#include "SFMTAVX512Fdc.h"
+#include "SFMTAVX2dc.hpp"
 
 int main(int argc, char *argv[]) {
+    using namespace MTToolBox;
     int rank;
     int num_process;
     // MPI_Status status;
@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &num_process);
     options opt;
-    bool parse = parse_opt(opt, argc, argv);
+    bool parse = MTToolBox::parse_opt(opt, argc, argv);
     if (!parse) {
         MPI_Finalize();
         return -1;
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     opt.seed = opt.seed + rank * 127;
-    search(opt, opt.count);
+    MTToolBox::search(opt, opt.count);
     close(fd);
     MPI_Abort(MPI_COMM_WORLD, 0);
     MPI_Finalize();

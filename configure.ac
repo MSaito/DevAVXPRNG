@@ -3,22 +3,28 @@
 
 AC_PREREQ([2.69])
 AC_INIT([DevAVXPRNG], [0.0.1], [saito@manieth.com])
-AC_CONFIG_SRCDIR([src/config.h.in])
-AC_CONFIG_HEADERS([src/config.h])
+AC_CONFIG_SRCDIR([include/config.h.in])
+AC_CONFIG_HEADERS([include/config.h])
 AC_CONFIG_MACRO_DIRS([m4])
 AM_INIT_AUTOMAKE
 
 AC_CANONICAL_HOST
-
-AC_ARG_ENABLE([mpi],
-        AS_HELP_STRING([--enable-mpi], [make open mpi search executables]))
-AM_CONDITIONAL([MPI], [test x$enable_mpi = xyes])
 
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
+
+# Open MPI compiler
+AC_ARG_ENABLE([mpi],
+        AS_HELP_STRING([--enable-mpi], [make open mpi search executables]))
+AM_CONDITIONAL([MPI], [test x$enable_mpi = xyes])
+
+if test !AS_VAR_TEST_SET([MPICXX]); then
+  AS_VAR_SET([MPICXX], [`which mpicxx`])
+fi
+AC_SUBST(MPICXX)
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -163,5 +169,5 @@ if test $ac_cv_cxx_have_std_tr1_sp = yes; then
 fi
 
 
-AC_CONFIG_FILES([Makefile src/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile mpisrc/Makefile])
 AC_OUTPUT

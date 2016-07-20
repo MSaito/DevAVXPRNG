@@ -1,4 +1,10 @@
+EXTRA_DIST = include/*
 ACLOCAL_AMFLAGS = -I m4
-AM_CXXFLAGS = -O2 -Wall -Wextra -D__STDC_CONSTANT_MACROS
-AM_LDFLAGS = -lMTToolBox
-SUBDIRS = src
+SUBDIRS =
+if MPI
+  SUBDIRS += mpisrc
+  EXTRA_DIST += src/*.cpp src/Makefile*
+else
+  SUBDIRS += src
+  EXTRA_DIST += mpisrc/*.cpp mpisrc/Makefile*
+endif

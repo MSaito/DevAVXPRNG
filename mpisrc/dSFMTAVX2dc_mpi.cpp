@@ -1,6 +1,7 @@
 /**
  * dSFMTAVX2dc-mpi.cpp
  */
+#include "devavxprng.h"
 #include <mpi.h>
 #include <fcntl.h>
 #include <unistd.h>
