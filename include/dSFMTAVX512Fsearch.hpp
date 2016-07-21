@@ -166,8 +166,8 @@ namespace MTToolBox {
             MTToolBox::setZero(previous);
             MTToolBox::setZero(lung);
             prefix = 0;
-            fixed = false;
             fixedSL1 = 0;
+            fixedPerm = 0;
         }
 
         ~dSFMTAVX512F() {
@@ -193,8 +193,8 @@ namespace MTToolBox {
             weight_mode = src.weight_mode;
             previous = src.previous;
             prefix = src.prefix;
-            fixed = src.fixed;
             fixedSL1 = src.fixedSL1;
+            fixedPerm = src.fixedPerm;
         }
 
         /**
@@ -216,8 +216,8 @@ namespace MTToolBox {
             MTToolBox::setZero(previous);
             MTToolBox::setZero(lung);
             prefix = 0;
-            fixed = false;
             fixedSL1 = 0;
+            fixedPerm = 0;
         }
 
         EquidistributionCalculatable<w512_t, uint64_t> * clone() const {
@@ -360,12 +360,16 @@ namespace MTToolBox {
             } else {
                 param.pos1 = mt.generate() % (size - 2) + 1;
             }
-            if (fixed && fixedSL1 > 0) {
+            if (fixedSL1 > 0) {
                 param.sl1 = fixedSL1;
             } else {
                 param.sl1 = mt.generate() % (52 - 1) + 1;
             }
-            param.perm = (mt.generate() % 8) * 2 + 1;
+            if (fixedPerm > 0) {
+                param.sl1 = fixedPerm;
+            } else {
+                param.perm = (mt.generate() % 8) * 2 + 1;
+            }
             for (int i = 0; i < 8; i++) {
                 param.msk1.u64[i] = mt.generate() | mt.generate();
                 param.msk1.u64[i] &= UINT64_C(0x000fffffffffffff);
@@ -553,11 +557,11 @@ namespace MTToolBox {
             }
             return 0;
         }
-        void setFixed(bool value) {
-            fixed = value;
-        }
         void setFixedSL1(int value) {
             fixedSL1 = value;
+        }
+        void setFixedPerm(int value) {
+            fixedPerm = value;
         }
     private:
         dSFMTAVX512F& operator=(const dSFMTAVX512F&) {
@@ -581,7 +585,7 @@ namespace MTToolBox {
         enum {sr1 = 12, lung_size = 512, element_size = 416,
               max_weight_mode = 8};
         int fixedSL1;
-        bool fixed;
+        int fixedPerm;
         int size;
         int index;
         int start_mode;

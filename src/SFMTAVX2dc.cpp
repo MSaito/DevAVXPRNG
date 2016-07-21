@@ -10,12 +10,13 @@
 int main(int argc, char** argv) {
     using namespace MTToolBox;
     DCOptions opt(607);
+    opt.useSR1 = true;
+    opt.fixedSL1 = 19;
+    opt.fixedSR1 = 7;
+    opt.fixedPerm = 1;
     bool parse = opt.parse(argc, argv);
     if (!parse) {
         return -1;
     }
-#if 0
-    opt.d_p();
-#endif
-    return MTToolBox::search<w256_t, SFMTAVX2, 256>(opt, opt.count);
+    return sfmtavx_search<w256_t, SFMTAVX2, 256>(opt, opt.count);
 }

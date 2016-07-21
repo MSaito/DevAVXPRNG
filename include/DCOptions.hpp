@@ -17,8 +17,13 @@ namespace MTToolBox {
     public:
         int mexp;
         bool verbose;
-        bool fixed;
-        int fixedValue;
+        bool useSR1;
+        bool fixedL;
+        bool fixedR;
+        bool fixedP;
+        int fixedSL1;
+        int fixedSR1;
+        int fixedPerm;
         uint64_t seed;
         long count;
         int min_mexp;
@@ -26,19 +31,29 @@ namespace MTToolBox {
         DCOptions(int min_mexp) {
             mexp = 0;
             verbose = false;
-            fixed = false;
-            fixedValue = -1;
+            useSR1 = false;
+            fixedL = false;
+            fixedR = false;
+            fixedP = false;
+            fixedSL1 = 0;
+            fixedSR1 = 0;
+            fixedPerm = 0;
             seed = (uint64_t)clock();
             count = 1;
             this->min_mexp = min_mexp;
         }
-#if 1
+#if defined(DEBUG)
         void d_p() {
             using namespace std;
             cout << "mexp:" << dec << mexp << endl;
             cout << "verbose:" << verbose << endl;
-            cout << "fixed:" << fixed << endl;
-            cout << "fixedValue:" << dec << fixedValue << endl;
+            cout << "useSR1:" << useSR1 << endl;
+            cout << "fixedL:" << fixedL << endl;
+            cout << "fixedR:" << fixedR << endl;
+            cout << "fixedP:" << fixedP << endl;
+            cout << "fixedSL1:" << dec << fixedSL1 << endl;
+            cout << "fixedSR1:" << dec << fixedSR1 << endl;
+            cout << "fixedPerm:" << dec << fixedPerm << endl;
             cout << "seed:" << dec << seed << endl;
             cout << "count:" << dec << count << endl;
             cout << "min_mexp:" << dec << min_mexp << endl;
@@ -59,13 +74,15 @@ namespace MTToolBox {
             string pgm = argv[0];
             static struct option longopts[] = {
                 {"verbose", no_argument, NULL, 'v'},
-                {"fixed", optional_argument, NULL, 'x'},
+                {"fixed-SL1", optional_argument, NULL, 'L'},
+                {"fixed-SR1", optional_argument, NULL, 'R'},
+                {"fixed-Perm", optional_argument, NULL, 'P'},
                 {"count", required_argument, NULL, 'c'},
                 {"seed", required_argument, NULL, 's'},
                 {NULL, 0, NULL, 0}};
             errno = 0;
             for (;;) {
-                c = getopt_long(argc, argv, "vs:c:x::", longopts, NULL);
+                c = getopt_long(argc, argv, "vs:c:L::R::P::", longopts, NULL);
                 if (error) {
                     break;
                 }
@@ -83,13 +100,36 @@ namespace MTToolBox {
                 case 'v':
                     verbose = true;
                     break;
-                case 'x':
-                    fixed = true;
+                case 'L':
+                    fixedL = true;
                     if (optarg != NULL) {
-                        fixedValue = strtoull(optarg, NULL, 0);
-                        if (errno) {
+                        fixedSL1 = strtoull(optarg, NULL, 0);
+                        if (errno || fixedSL1 <= 0) {
                             error = true;
-                            cerr << "fixed value must be a number" << endl;
+                            cerr << "fixed SL1 must be a positive number"
+                                 << endl;
+                        }
+                    }
+                    break;
+                case 'R':
+                    fixedR = true;
+                    if (optarg != NULL) {
+                        fixedSR1 = strtoull(optarg, NULL, 0);
+                        if (errno || fixedSR1 <= 0) {
+                            error = true;
+                            cerr << "fixed SR1 must be a positive number"
+                                 << endl;
+                        }
+                    }
+                    break;
+                case 'P':
+                    fixedP = true;
+                    if (optarg != NULL) {
+                        fixedPerm = strtoull(optarg, NULL, 0);
+                        if (errno || fixedPerm <= 0) {
+                            error = true;
+                            cerr << "fixed Perm must be a positive number"
+                                 << endl;
                         }
                     }
                     break;
@@ -158,20 +198,30 @@ namespace MTToolBox {
             using namespace std;
             cerr << "usage:" << endl;
             cerr << pgm
-                 << " [-s seed] [-v] [-c count]"
-                 << " [-x]"
+                 << " [-s seed] [-v] [-c count]";
+            cerr << " [-L [value]] ";
+            if (useSR1) {
+                cerr << "[-R [value]] ";
+            }
+            cerr << "[-P [value]]"
                  << " mexp"
                  << endl;
-            static string help_string1 = "\n"
-                "--verbose, -v        Verbose mode. Output parameters,"
-                " calculation time, etc.\n"
-                "--count, -c count    Output count. The number of parameters"
-                " to be outputted.\n"
-                "--seed, -s seed      seed of randomness.\n"
-                "--fixed, -x          use prefixed parameter.\n"
-                "mexp                 mersenne exponent.\n"
-                ;
-            cerr << help_string1 << endl;
+            cerr << "\n"
+                 << "--verbose, -v                 Verbose mode. "
+                 << "Output parameters,"
+                 << " calculation time, etc.\n"
+                 << "--count, -c count             Output count. The number of "
+                 << "parameters to be outputted.\n"
+                 << "--seed, -s seed               seed of randomness.\n"
+                 << "--fixed-SL1, -L [shift-value] "
+                 << "use fixed shift parameter.\n";
+            if (useSR1) {
+                cerr << "--fixed-SR1, -R [shift-value] "
+                     << "use fixed shift parameter.\n";
+            }
+            cerr << "--fixed-Perm, -P [perm-value] use fixed perm parameter.\n"
+                 << "mexp                          mersenne exponent.\n";
+            cerr << endl;
         }
     };
 }

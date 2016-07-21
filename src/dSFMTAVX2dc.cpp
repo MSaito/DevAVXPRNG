@@ -12,11 +12,12 @@
 int main(int argc, char** argv) {
     using namespace MTToolBox;
     DCOptions opt(607);
-    opt.fixed = true;
-    opt.fixedValue = 19;
+    opt.useSR1 = false;
+    opt.fixedSL1 = 19;
+    opt.fixedPerm = 1;
     bool parse = opt.parse(argc, argv);
     if (!parse) {
         return -1;
     }
-    return search<w256_t, dSFMTAVX2, 256>(opt, opt.count);
+    return dsfmtavx_search<w256_t, dSFMTAVX2, 256>(opt, opt.count);
 }

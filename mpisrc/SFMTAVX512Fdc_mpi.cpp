@@ -6,7 +6,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-#include "SFMTAVX512Fdc.hpp"
+#include "DCOptions.hpp"
+#include "SFMTAVXdc.hpp"
 
 int main(int argc, char *argv[]) {
     using namespace MTToolBox;
@@ -16,8 +17,12 @@ int main(int argc, char *argv[]) {
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &num_process);
-    options opt;
-    bool parse = parse_opt(opt, argc, argv);
+    DCOptions opt(1279);
+    opt.useSR1 = true;
+    opt.fixedSL1 = 19;
+    opt.fixedSR1 = 7;
+    opt.fixedPerm = 1;
+    bool parse = opt.parse(argc, argv);
     if (!parse) {
         MPI_Finalize();
         return -1;
@@ -41,7 +46,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     opt.seed = opt.seed + rank * 127;
-    search(opt, opt.count);
+    search<w512_t, SFMTAVX512F, 512>(opt, opt.count);
     close(fd);
     MPI_Abort(MPI_COMM_WORLD, 0);
     MPI_Finalize();

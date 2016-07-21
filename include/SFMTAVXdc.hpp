@@ -22,14 +22,20 @@ namespace MTToolBox {
      * @return 0 if this ends normally
      */
     template<typename U, typename G, int bitWidth>
-    int search(DCOptions& opt, int count) {
+    int sfmtavx_search(DCOptions& opt, int count) {
         using namespace std;
         using namespace NTL;
         MersenneTwister mt(opt.seed);
         G g(opt.mexp);
 
-        if (opt.fixed) {
-            g.setFixed(true);
+        if (opt.fixedL) {
+            g.setFixedSL1(opt.fixedSL1);
+        }
+        if (opt.fixedR) {
+            g.setFixedSR1(opt.fixedSR1);
+        }
+        if (opt.fixedP) {
+            g.setFixedPerm(opt.fixedPerm);
         }
         cout << "seed = " << dec << opt.seed << endl;
         if (opt.verbose) {

@@ -13,7 +13,6 @@
 #include <MTToolBox/ReducibleGenerator.hpp>
 #include <MTToolBox/MersenneTwister64.hpp>
 #include <MTToolBox/util.hpp>
-//#include <cstring>
 #include "w256.hpp"
 
 /**
@@ -168,8 +167,8 @@ namespace MTToolBox {
             MTToolBox::setZero(previous);
             MTToolBox::setZero(lung);
             prefix = 0;
-            fixed = false;
             fixedSL1 = 0;
+            fixedPerm = 0;
         }
 
         ~dSFMTAVX2() {
@@ -195,8 +194,8 @@ namespace MTToolBox {
             weight_mode = src.weight_mode;
             previous = src.previous;
             prefix = src.prefix;
-            fixed = src.fixed;
             fixedSL1 = src.fixedSL1;
+            fixedPerm = src.fixedPerm;
         }
 
         /**
@@ -218,8 +217,8 @@ namespace MTToolBox {
             MTToolBox::setZero(previous);
             MTToolBox::setZero(lung);
             prefix = 0;
-            fixed = false;
             fixedSL1 = 0;
+            fixedPerm = 0;
         }
 
         EquidistributionCalculatable<w256_t, uint64_t> * clone() const {
@@ -377,12 +376,16 @@ namespace MTToolBox {
             } else {
                 param.pos1 = mt.generate() % (size - 2) + 1;
             }
-            if (fixed && fixedSL1 > 0) {
+            if (fixedSL1 > 0) {
                 param.sl1 = fixedSL1;
             } else {
                 param.sl1 = mt.generate() % (52 - 1) + 1;
             }
-            param.perm = (mt.generate() % 4) * 2 + 1;
+            if (fixedPerm > 0) {
+                param.perm = fixedPerm;
+            } else {
+                param.perm = (mt.generate() % 4) * 2 + 1;
+            }
             for (int i = 0; i < 4; i++) {
                 param.msk1.u64[i] = mt.generate() | mt.generate();
                 param.msk1.u64[i] &= UINT64_C(0x000fffffffffffff);
@@ -574,11 +577,11 @@ namespace MTToolBox {
             }
             return 0;
         }
-        void setFixed(bool value) {
-            fixed = value;
-        }
         void setFixedSL1(int value) {
             fixedSL1 = value;
+        }
+        void setFixedPerm(int value) {
+            fixedPerm = value;
         }
     private:
         dSFMTAVX2& operator=(const dSFMTAVX2&) {
@@ -602,7 +605,7 @@ namespace MTToolBox {
         enum {sr1 = 12, lung_size = 256, element_size = 208,
               max_weight_mode = 4};
         int fixedSL1;
-        bool fixed;
+        int fixedPerm;
         int size;
         int index;
         int start_mode;

@@ -24,7 +24,7 @@ namespace MTToolBox {
      * @return 0 if this ends normally
      */
     template<typename U, typename G, int bitWidth>
-    int search(DCOptions& opt, int count) {
+    int dsfmtavx_search(DCOptions& opt, int count) {
         using namespace std;
         using namespace NTL;
 
@@ -36,9 +36,11 @@ namespace MTToolBox {
             time_t t = time(NULL);
             cout << "search start at " << ctime(&t);
         }
-        if (opt.fixed) {
-            g.setFixed(true);
-            g.setFixedSL1(opt.fixedValue);
+        if (opt.fixedL) {
+            g.setFixedSL1(opt.fixedSL1);
+        }
+        if (opt.fixedP) {
+            g.setFixedPerm(opt.fixedPerm);
         }
         AlgorithmReducibleRecursionSearch<U, uint64_t> ars(g, mt);
         int i = 0;

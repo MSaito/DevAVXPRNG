@@ -5,10 +5,9 @@
 #include <mpi.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <stdio.h>
 #include <errno.h>
-#include <stdlib.h>
-#include "dSFMTAVX2dc.h"
+#include "DCOptions.hpp"
+#include "dSFMTAVXdc.hpp"
 
 int main(int argc, char *argv[]) {
     int rank;
@@ -17,8 +16,11 @@ int main(int argc, char *argv[]) {
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &num_process);
-    options opt;
-    bool parse = parse_opt(opt, argc, argv);
+    DCOptions opt(607);
+    opt.useSR1 = false;
+    opt.fixedValue = 19;
+    opt.fixedPerm = 1;
+    bool parse = opt.parse(argc, argv);
     if (!parse) {
         MPI_Finalize();
         return -1;
@@ -42,7 +44,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     opt.seed = opt.seed + rank * 127;
-    search(opt, opt.count);
+    search<w256_t, dSFMTAVX2, 256>(opt, opt.count);
     close(fd);
     MPI_Abort(MPI_COMM_WORLD, 0);
     MPI_Finalize();

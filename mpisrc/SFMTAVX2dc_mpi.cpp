@@ -1,11 +1,12 @@
 /**
- * SFMTAVX2dc-mpi.cpp
+ * SFMTAVX2dc_mpi.cpp
  */
 #include "devavxprng.h"
 #include <mpi.h>
 #include <fcntl.h>
 #include <errno.h>
-#include "SFMTAVX2dc.hpp"
+#include "DCOptions.hpp"
+#include "SFMTAVXdc.hpp"
 
 int main(int argc, char *argv[]) {
     using namespace MTToolBox;
@@ -15,8 +16,12 @@ int main(int argc, char *argv[]) {
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &num_process);
-    options opt;
-    bool parse = MTToolBox::parse_opt(opt, argc, argv);
+    DCptions opt(607);
+    opt.useSR1 = true
+    opt.fixedSL1 = 19;
+    opt.fixedSR1 = 4;
+    opt.fixedPerm = 1;
+    bool parse = opt.parse(argc, argv);
     if (!parse) {
         MPI_Finalize();
         return -1;
@@ -40,7 +45,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     opt.seed = opt.seed + rank * 127;
-    MTToolBox::search(opt, opt.count);
+    search<w256_t, SFMTAVX2, 256>(opt, opt.count);
     close(fd);
     MPI_Abort(MPI_COMM_WORLD, 0);
     MPI_Finalize();

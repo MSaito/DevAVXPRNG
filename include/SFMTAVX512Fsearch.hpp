@@ -139,7 +139,9 @@ namespace MTToolBox {
             param.sl1 = 0;
             param.sr1 = 0;
             param.perm = 1;
-            fixed = false;
+            fixedSL1 = 0;
+            fixedSR1 = 0;
+            fixedPerm = 0;
             MTToolBox::setZero(param.mat1);
             MTToolBox::setZero(param.parity1);
             MTToolBox::setZero(lung);
@@ -164,7 +166,9 @@ namespace MTToolBox {
             for (int i = 0; i < size; i++) {
                 state[i] = src.state[i];
             }
-            fixed = src.fixed;
+            fixedSL1 = src.fixedSL1;
+            fixedSR1 = src.fixedSR1;
+            fixedPerm = src.fixedPerm;
             lung = src.lung;
             index = src.index;
             start_mode = src.start_mode;
@@ -184,7 +188,9 @@ namespace MTToolBox {
                 MTToolBox::setZero(state[i]);
             }
             MTToolBox::setZero(lung);
-            fixed = false;
+            fixedSL1 = 0;
+            fixedSR1 = 0;
+            fixedPerm = 0;
             index = 0;
             start_mode = 0;
             weight_mode = 16;
@@ -338,15 +344,23 @@ namespace MTToolBox {
             } else {
                 param.pos1 = mt.generate() % (size - 2) + 1;
             }
-            if (fixed) {
+            if (fixedSL1 > 0) {
                 // These parameters are not best ones.
-                param.sl1 = 19;
-                param.sr1 = 7;
+                param.sl1 = fixedSL1;
             } else {
                 param.sl1 = mt.generate() % (64 - 1) + 1;
+            }
+            if (fixedSR1 > 0) {
+                // These parameters are not best ones.
+                param.sr1 = fixedSR1;
+            } else {
                 param.sr1 = mt.generate() % (64 - 1) + 1;
             }
-            param.perm = (mt.generate() % 8) * 2 + 1;
+            if (fixedPerm > 0) {
+                param.perm = fixedPerm;
+            } else {
+                param.perm = (mt.generate() % 8) * 2 + 1;
+            }
             for (int i = 0; i < 16; i++) {
                 param.mat1.u[i] = mt.generate() | mt.generate();
             }
@@ -499,8 +513,14 @@ namespace MTToolBox {
             }
             cout << lung << endl;
         }
-        void setFixed(bool value) {
-            fixed = value;
+        void setFixedSL1(int value) {
+            fixedSL1 = value;
+        }
+        void setFixedSR1(int value) {
+            fixedSR1 = value;
+        }
+        void setFixedPerm(int value) {
+            fixedPerm = value;
         }
 
     private:
@@ -508,7 +528,9 @@ namespace MTToolBox {
             throw std::logic_error("can't assign");
         }
         enum {element_size = 512, max_weight_mode = 16};
-        bool fixed;
+        int fixedSL1;
+        int fixedSR1;
+        int fixedPerm;
         int size;
         int index;
         int start_mode;
