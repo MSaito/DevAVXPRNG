@@ -1,8 +1,8 @@
 #pragma once
-#ifndef DSFMTAVXEQ_HPP
-#define DSFMTAVXEQ_HPP
+#ifndef DSFMTAVXEQMPI_HPP
+#define DSFMTAVXEQMPI_HPP
 /**
- * @file dSFMTAVXeq.hpp
+ * @file dSFMTAVXeqmpi.hpp
  */
 
 #include "devavxprng.h"
@@ -17,7 +17,8 @@
 namespace MTToolBox {
 
     template<typename U, typename G, typename P, int bitWidth>
-    int dsfmtavx_equidistribution(EQOptions<P> opt)
+    int dsfmtavxmpi_equidist(EQOptions<P>& opt,
+                             int rank, int num_process)
     {
         using namespace std;
         G sf(opt.params);
@@ -28,26 +29,21 @@ namespace MTToolBox {
         if (!annihilate.anni(sf)) {
             return -1;
         }
-        int delta52 = 0;
-        int veq52[52];
+
         DSFMTInfo info;
         info.bitSize = bitWidth; // IMPORTANT
         info.elementNo = bitWidth / 64;
-        delta52 = calc_dSFMT_equidistribution<U, G>
-            (sf, veq52, 52, info, opt.params.mexp);
-        cout << sf.getParamString();
-        cout << dec << delta52 << endl;
-        if (opt.verbose) {
-            cout << "52bit dimension of equidistribution at v-bit accuracy k(v)"
-                 << endl;
-            for (int j = 0; j < 52; j++) {
-                cout << "k(" << dec << (j + 1) << ") = " << dec << veq52[j];
-                cout << "\td(" << dec << (j + 1) << ") = " << dec
-                     << (opt.params.mexp / (j + 1) - veq52[j]) << endl;
+        for (int v = 1; v <= 64; v++) {
+            if (v % num_process == rank) {
+                int veq = calc_dSFMT_equidist<U, G>(v, sf, info,
+                                                    opt.params.mexp);
+                int d = opt.params.mexp / v - veq;
+                cout << "k(" << dec << v << ") = " << dec << veq;
+                cout << "\td(" << dec << v << ") = " << dec << d << endl;
             }
         }
         return 0;
     }
 }
 
-#endif // DSFMTAVXEQ_HPP
+#endif // DSFMTAVXEQMPI_HPP

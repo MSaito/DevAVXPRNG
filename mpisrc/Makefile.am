@@ -4,6 +4,7 @@ AM_CXXFLAGS = -O2 -Wall -Wextra -I../include \
 -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS
 AM_LDFLAGS = -lMTToolBox
 
+EXTRA_DIST = SFMTAVXeqmpi.hpp dSFMTAVXeqmpi.hpp
 noinst_PROGRAMS = dSFMTAVX2dc_mpi dSFMTAVX512Fdc_mpi \
 dSFMTAVX2eq_mpi dSFMTAVX512Feq_mpi \
 SFMTAVX2dc_mpi SFMTAVX512Fdc_mpi \

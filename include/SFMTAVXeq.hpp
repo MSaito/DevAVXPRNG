@@ -6,10 +6,10 @@
  */
 #include "devavxprng.h"
 #include "AlgorithmSIMDEquidistribution.hpp"
-#include <MTToolBox/AlgorithmEquidistribution.hpp>
-#include <MTToolBox/AlgorithmReducibleRecursionSearch.hpp>
-#include <MTToolBox/period.hpp>
-#include <NTL/GF2X.h>
+//#include <MTToolBox/AlgorithmEquidistribution.hpp>
+//#include <MTToolBox/AlgorithmReducibleRecursionSearch.hpp>
+//#include <MTToolBox/period.hpp>
+//#include <NTL/GF2X.h>
 #include "Annihilate.hpp"
 #include "EQOptions.hpp"
 

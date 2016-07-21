@@ -6,8 +6,12 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include "SFMTAVX512Fsearch.hpp"
 #include "DCOptions.hpp"
 #include "SFMTAVXdc.hpp"
+
+using namespace MTToolBox;
+using namespace std;
 
 int main(int argc, char *argv[]) {
     using namespace MTToolBox;
@@ -46,7 +50,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     opt.seed = opt.seed + rank * 127;
-    search<w512_t, SFMTAVX512F, 512>(opt, opt.count);
+    sfmtavx_search<w512_t, SFMTAVX512F, 512>(opt, opt.count);
     close(fd);
     MPI_Abort(MPI_COMM_WORLD, 0);
     MPI_Finalize();
