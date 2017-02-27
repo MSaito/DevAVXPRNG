@@ -14,7 +14,7 @@ namespace MTToolBox {
      * @tparam U simd vector like w256_t
      * @tparam V base rng width like uint32_t
      */
-    template<typename G, typename U, typename V>
+    template<typename G, typename U>
     class Annihilate {
     public:
         bool anni(G& sf) {
@@ -58,7 +58,7 @@ namespace MTToolBox {
                 cout << "quotient * irreducible != poly" << endl;
                 return false;
             }
-            annihilate<U, V>(&sf, quotient);
+            annihilate<U>(&sf, quotient);
             minpoly(poly, sf);
             if (poly != irreducible) {
                 cout << "annihilate failed" << endl;

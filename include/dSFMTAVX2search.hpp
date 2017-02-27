@@ -143,7 +143,7 @@ namespace MTToolBox {
      * This class is one of the main class of DSFMTAVX2 dynamic creator.
      * This class is designed to be called from programs in MTToolBox.
      */
-    class dSFMTAVX2 : public ReducibleGenerator<w256_t, uint64_t> {
+    class dSFMTAVX2 : public ReducibleGenerator<w256_t> {
     public:
         /**
          * Constructor by mexp.
@@ -221,7 +221,7 @@ namespace MTToolBox {
             fixedPerm = 0;
         }
 
-        EquidistributionCalculatable<w256_t, uint64_t> * clone() const {
+        EquidistributionCalculatable<w256_t> * clone() const {
             return new dSFMTAVX2(*this);
         }
 
@@ -367,27 +367,27 @@ namespace MTToolBox {
          * internal id
          * @param num sequential number
          */
-        void setUpParam(AbstractGenerator<uint64_t>& mt) {
+        void setUpParam(ParameterGenerator& mt) {
 #if defined(DEBUG)
             cout << "dSFMTAVX2 setUpParam start" << endl;
 #endif
             if (size == 2) {
                 param.pos1 = 1;
             } else {
-                param.pos1 = mt.generate() % (size - 2) + 1;
+                param.pos1 = mt.getUint64() % (size - 2) + 1;
             }
             if (fixedSL1 > 0) {
                 param.sl1 = fixedSL1;
             } else {
-                param.sl1 = mt.generate() % (52 - 1) + 1;
+                param.sl1 = mt.getUint64() % (52 - 1) + 1;
             }
             if (fixedPerm > 0) {
                 param.perm = fixedPerm;
             } else {
-                param.perm = (mt.generate() % 4) * 2 + 1;
+                param.perm = (mt.getUint64() % 4) * 2 + 1;
             }
             for (int i = 0; i < 4; i++) {
-                param.msk1.u64[i] = mt.generate() | mt.generate();
+                param.msk1.u64[i] = mt.getUint64() | mt.getUint64();
                 param.msk1.u64[i] &= UINT64_C(0x000fffffffffffff);
             }
 #if defined(DEBUG)
@@ -459,7 +459,7 @@ namespace MTToolBox {
         /**
          * @param that DSFMTAVX2 generator added to this generator
          */
-        void add(EquidistributionCalculatable<w256_t, uint64_t>& other) {
+        void add(EquidistributionCalculatable<w256_t>& other) {
             dSFMTAVX2 *that = dynamic_cast<dSFMTAVX2 *>(&other);
             if (that == 0) {
                 throw std::invalid_argument(

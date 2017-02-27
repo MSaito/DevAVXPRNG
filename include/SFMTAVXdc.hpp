@@ -42,10 +42,10 @@ namespace MTToolBox {
             time_t t = time(NULL);
             cout << "search start at " << ctime(&t);
         }
-        AlgorithmReducibleRecursionSearch<U, uint32_t> ars(g, mt);
+        AlgorithmReducibleRecursionSearch<U> ars(g, mt);
         int i = 0;
         AlgorithmCalculateParity<U, G> cp;
-        Annihilate<G, U, uint32_t> annihilate;
+        Annihilate<G, U> annihilate;
         cout << "# " << g.getHeaderString() << ", delta32, delta64"
              << endl;
         while (i < count) {

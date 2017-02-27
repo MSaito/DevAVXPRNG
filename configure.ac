@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([DevAVXPRNG], [0.0.1], [saito@manieth.com])
+AC_INIT([DevAVXPRNG], [0.1.0], [saito@manieth.com])
 AC_CONFIG_SRCDIR([include/config.h.in])
 AC_CONFIG_HEADERS([include/config.h])
 AC_CONFIG_MACRO_DIRS([m4])
@@ -15,6 +15,8 @@ AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
+
+AX_GCC_ARCHFLAG
 
 # Open MPI compiler
 AC_ARG_ENABLE([mpi],
@@ -37,22 +39,16 @@ string.h])
 AC_TYPE_INT64_T
 AC_TYPE_UINT64_T
 
+# keep this order
 AC_CHECK_LIB(gf2x, gf2x_mul)
 AC_CHECK_LIB(gmp, __gmpz_init)
-AC_CHECK_LIB(ntl, main,[],[ AC_MSG_ERROR(Need ntl) ])
-#AX_CXX_CHECK_LIB(MTToolBox, [MTToolBox::prime_factors2_128_1], [],[ AC_MSG_ERROR(Need MTToolBox) ])
+AC_CHECK_LIB(ntl, main,[],[AC_MSG_ERROR(Need ntl)])
+AC_CHECK_LIB(MTToolBox, get_mttoolbox_version,[],[AC_MSG_ERROR(Need MTToolBox)])
 
-#AC_MSG_CHECKING(for std=-c++11)
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
-AX_CHECK_COMPILE_FLAG([-std=c++11], [ac_cv_cpp11=yes], [ac_cv_cpp11=no])
-if test $ac_cv_cpp11 = yes; then
-   AX_APPEND_FLAG([-std=c++11], [CXXFLAGS])
-else
-  AX_CHECK_COMPILE_FLAG([-std=c++0x],
-  [AX_APPEND_FLAG([-std=c++0x], [CXXFLAGS])])
-fi
-AC_LANG_RESTORE
+AX_CXX_COMPILE_STDCXX_0X
+
+AX_CXX_COMPILE_STDCXX_14(noext, optional) # keep this order
+AX_CXX_COMPILE_STDCXX_11(noext, optional)
 
 # Checks for library functions.
 #AC_CHECK_FUNCS([strtoull _may_i_use_cpu_feature __builtin_cpu_supports])

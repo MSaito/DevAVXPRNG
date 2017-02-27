@@ -167,6 +167,1169 @@ AS_VAR_IF(CACHEVAR,yes,
 AS_VAR_POPDEF([CACHEVAR])dnl
 ])dnl AX_CHECK_COMPILE_FLAGS
 
+# ===========================================================================
+#    http://www.gnu.org/software/autoconf-archive/ax_compiler_vendor.html
+# ===========================================================================
+#
+# SYNOPSIS
+#
+#   AX_COMPILER_VENDOR
+#
+# DESCRIPTION
+#
+#   Determine the vendor of the C/C++ compiler, e.g., gnu, intel, ibm, sun,
+#   hp, borland, comeau, dec, cray, kai, lcc, metrowerks, sgi, microsoft,
+#   watcom, etc. The vendor is returned in the cache variable
+#   $ax_cv_c_compiler_vendor for C and $ax_cv_cxx_compiler_vendor for C++.
+#
+# LICENSE
+#
+#   Copyright (c) 2008 Steven G. Johnson <stevenj@alum.mit.edu>
+#   Copyright (c) 2008 Matteo Frigo
+#
+#   This program is free software: you can redistribute it and/or modify it
+#   under the terms of the GNU General Public License as published by the
+#   Free Software Foundation, either version 3 of the License, or (at your
+#   option) any later version.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+#   Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License along
+#   with this program. If not, see <http://www.gnu.org/licenses/>.
+#
+#   As a special exception, the respective Autoconf Macro's copyright owner
+#   gives unlimited permission to copy, distribute and modify the configure
+#   scripts that are the output of Autoconf when processing the Macro. You
+#   need not follow the terms of the GNU General Public License when using
+#   or distributing such scripts, even though portions of the text of the
+#   Macro appear in them. The GNU General Public License (GPL) does govern
+#   all other use of the material that constitutes the Autoconf Macro.
+#
+#   This special exception to the GPL applies to versions of the Autoconf
+#   Macro released by the Autoconf Archive. When you make and distribute a
+#   modified version of the Autoconf Macro, you may extend this special
+#   exception to the GPL to apply to your modified version as well.
+
+#serial 15
+
+AC_DEFUN([AX_COMPILER_VENDOR],
+[AC_CACHE_CHECK([for _AC_LANG compiler vendor], ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor,
+  dnl Please add if possible support to ax_compiler_version.m4
+  [# note: don't check for gcc first since some other compilers define __GNUC__
+  vendors="intel:     __ICC,__ECC,__INTEL_COMPILER
+           ibm:       __xlc__,__xlC__,__IBMC__,__IBMCPP__
+           pathscale: __PATHCC__,__PATHSCALE__
+           clang:     __clang__
+           cray:      _CRAYC
+           fujitsu:   __FUJITSU
+           gnu:       __GNUC__
+           sun:       __SUNPRO_C,__SUNPRO_CC
+           hp:        __HP_cc,__HP_aCC
+           dec:       __DECC,__DECCXX,__DECC_VER,__DECCXX_VER
+           borland:   __BORLANDC__,__CODEGEARC__,__TURBOC__
+           comeau:    __COMO__
+           kai:       __KCC
+           lcc:       __LCC__
+           sgi:       __sgi,sgi
+           microsoft: _MSC_VER
+           metrowerks: __MWERKS__
+           watcom:    __WATCOMC__
+           portland:  __PGI
+	   tcc:       __TINYC__
+           unknown:   UNKNOWN"
+  for ventest in $vendors; do
+    case $ventest in
+      *:) vendor=$ventest; continue ;;
+      *)  vencpp="defined("`echo $ventest | sed 's/,/) || defined(/g'`")" ;;
+    esac
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[
+      #if !($vencpp)
+        thisisanerror;
+      #endif
+    ])], [break])
+  done
+  ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor=`echo $vendor | cut -d: -f1`
+ ])
+])
+
+# ===========================================================================
+#   http://www.gnu.org/software/autoconf-archive/ax_cxx_compile_stdcxx.html
+# ===========================================================================
+#
+# SYNOPSIS
+#
+#   AX_CXX_COMPILE_STDCXX(VERSION, [ext|noext], [mandatory|optional])
+#
+# DESCRIPTION
+#
+#   Check for baseline language coverage in the compiler for the specified
+#   version of the C++ standard.  If necessary, add switches to CXX to
+#   enable support.  VERSION may be '11' (for the C++11 standard) or '14'
+#   (for the C++14 standard).
+#
+#   The second argument, if specified, indicates whether you insist on an
+#   extended mode (e.g. -std=gnu++11) or a strict conformance mode (e.g.
+#   -std=c++11).  If neither is specified, you get whatever works, with
+#   preference for an extended mode.
+#
+#   The third argument, if specified 'mandatory' or if left unspecified,
+#   indicates that baseline support for the specified C++ standard is
+#   required and that the macro should error out if no mode with that
+#   support is found.  If specified 'optional', then configuration proceeds
+#   regardless, after defining HAVE_CXX${VERSION} if and only if a
+#   supporting mode is found.
+#
+# LICENSE
+#
+#   Copyright (c) 2008 Benjamin Kosnik <bkoz@redhat.com>
+#   Copyright (c) 2012 Zack Weinberg <zackw@panix.com>
+#   Copyright (c) 2013 Roy Stogner <roystgnr@ices.utexas.edu>
+#   Copyright (c) 2014, 2015 Google Inc.; contributed by Alexey Sokolov <sokolov@google.com>
+#   Copyright (c) 2015 Paul Norman <penorman@mac.com>
+#   Copyright (c) 2015 Moritz Klammler <moritz@klammler.eu>
+#
+#   Copying and distribution of this file, with or without modification, are
+#   permitted in any medium without royalty provided the copyright notice
+#   and this notice are preserved.  This file is offered as-is, without any
+#   warranty.
+
+#serial 3
+
+dnl  This macro is based on the code from the AX_CXX_COMPILE_STDCXX_11 macro
+dnl  (serial version number 13).
+
+AC_DEFUN([AX_CXX_COMPILE_STDCXX], [dnl
+  m4_if([$1], [11], [],
+        [$1], [14], [],
+        [$1], [17], [m4_fatal([support for C++17 not yet implemented in AX_CXX_COMPILE_STDCXX])],
+        [m4_fatal([invalid first argument `$1' to AX_CXX_COMPILE_STDCXX])])dnl
+  m4_if([$2], [], [],
+        [$2], [ext], [],
+        [$2], [noext], [],
+        [m4_fatal([invalid second argument `$2' to AX_CXX_COMPILE_STDCXX])])dnl
+  m4_if([$3], [], [ax_cxx_compile_cxx$1_required=true],
+        [$3], [mandatory], [ax_cxx_compile_cxx$1_required=true],
+        [$3], [optional], [ax_cxx_compile_cxx$1_required=false],
+        [m4_fatal([invalid third argument `$3' to AX_CXX_COMPILE_STDCXX])])
+  AC_LANG_PUSH([C++])dnl
+  ac_success=no
+  AC_CACHE_CHECK(whether $CXX supports C++$1 features by default,
+  ax_cv_cxx_compile_cxx$1,
+  [AC_COMPILE_IFELSE([AC_LANG_SOURCE([_AX_CXX_COMPILE_STDCXX_testbody_$1])],
+    [ax_cv_cxx_compile_cxx$1=yes],
+    [ax_cv_cxx_compile_cxx$1=no])])
+  if test x$ax_cv_cxx_compile_cxx$1 = xyes; then
+    ac_success=yes
+  fi
+
+  m4_if([$2], [noext], [], [dnl
+  if test x$ac_success = xno; then
+    for switch in -std=gnu++$1 -std=gnu++0x; do
+      cachevar=AS_TR_SH([ax_cv_cxx_compile_cxx$1_$switch])
+      AC_CACHE_CHECK(whether $CXX supports C++$1 features with $switch,
+                     $cachevar,
+        [ac_save_CXX="$CXX"
+         CXX="$CXX $switch"
+         AC_COMPILE_IFELSE([AC_LANG_SOURCE([_AX_CXX_COMPILE_STDCXX_testbody_$1])],
+          [eval $cachevar=yes],
+          [eval $cachevar=no])
+         CXX="$ac_save_CXX"])
+      if eval test x\$$cachevar = xyes; then
+        CXX="$CXX $switch"
+        ac_success=yes
+        break
+      fi
+    done
+  fi])
+
+  m4_if([$2], [ext], [], [dnl
+  if test x$ac_success = xno; then
+    dnl HP's aCC needs +std=c++11 according to:
+    dnl http://h21007.www2.hp.com/portal/download/files/unprot/aCxx/PDF_Release_Notes/769149-001.pdf
+    dnl Cray's crayCC needs "-h std=c++11"
+    for switch in -std=c++$1 -std=c++0x +std=c++$1 "-h std=c++$1"; do
+      cachevar=AS_TR_SH([ax_cv_cxx_compile_cxx$1_$switch])
+      AC_CACHE_CHECK(whether $CXX supports C++$1 features with $switch,
+                     $cachevar,
+        [ac_save_CXX="$CXX"
+         CXX="$CXX $switch"
+         AC_COMPILE_IFELSE([AC_LANG_SOURCE([_AX_CXX_COMPILE_STDCXX_testbody_$1])],
+          [eval $cachevar=yes],
+          [eval $cachevar=no])
+         CXX="$ac_save_CXX"])
+      if eval test x\$$cachevar = xyes; then
+        CXX="$CXX $switch"
+        ac_success=yes
+        break
+      fi
+    done
+  fi])
+  AC_LANG_POP([C++])
+  if test x$ax_cxx_compile_cxx$1_required = xtrue; then
+    if test x$ac_success = xno; then
+      AC_MSG_ERROR([*** A compiler with support for C++$1 language features is required.])
+    fi
+  fi
+  if test x$ac_success = xno; then
+    HAVE_CXX$1=0
+    AC_MSG_NOTICE([No compiler with C++$1 support was found])
+  else
+    HAVE_CXX$1=1
+    AC_DEFINE(HAVE_CXX$1,1,
+              [define if the compiler supports basic C++$1 syntax])
+  fi
+  AC_SUBST(HAVE_CXX$1)
+])
+
+
+dnl  Test body for checking C++11 support
+
+m4_define([_AX_CXX_COMPILE_STDCXX_testbody_11],
+  _AX_CXX_COMPILE_STDCXX_testbody_new_in_11
+)
+
+
+dnl  Test body for checking C++14 support
+
+m4_define([_AX_CXX_COMPILE_STDCXX_testbody_14],
+  _AX_CXX_COMPILE_STDCXX_testbody_new_in_11
+  _AX_CXX_COMPILE_STDCXX_testbody_new_in_14
+)
+
+
+dnl  Tests for new features in C++11
+
+m4_define([_AX_CXX_COMPILE_STDCXX_testbody_new_in_11], [[
+
+// If the compiler admits that it is not ready for C++11, why torture it?
+// Hopefully, this will speed up the test.
+
+#ifndef __cplusplus
+
+#error "This is not a C++ compiler"
+
+#elif __cplusplus < 201103L
+
+#error "This is not a C++11 compiler"
+
+#else
+
+namespace cxx11
+{
+
+  namespace test_static_assert
+  {
+
+    template <typename T>
+    struct check
+    {
+      static_assert(sizeof(int) <= sizeof(T), "not big enough");
+    };
+
+  }
+
+  namespace test_final_override
+  {
+
+    struct Base
+    {
+      virtual void f() {}
+    };
+
+    struct Derived : public Base
+    {
+      virtual void f() override {}
+    };
+
+  }
+
+  namespace test_double_right_angle_brackets
+  {
+
+    template < typename T >
+    struct check {};
+
+    typedef check<void> single_type;
+    typedef check<check<void>> double_type;
+    typedef check<check<check<void>>> triple_type;
+    typedef check<check<check<check<void>>>> quadruple_type;
+
+  }
+
+  namespace test_decltype
+  {
+
+    int
+    f()
+    {
+      int a = 1;
+      decltype(a) b = 2;
+      return a + b;
+    }
+
+  }
+
+  namespace test_type_deduction
+  {
+
+    template < typename T1, typename T2 >
+    struct is_same
+    {
+      static const bool value = false;
+    };
+
+    template < typename T >
+    struct is_same<T, T>
+    {
+      static const bool value = true;
+    };
+
+    template < typename T1, typename T2 >
+    auto
+    add(T1 a1, T2 a2) -> decltype(a1 + a2)
+    {
+      return a1 + a2;
+    }
+
+    int
+    test(const int c, volatile int v)
+    {
+      static_assert(is_same<int, decltype(0)>::value == true, "");
+      static_assert(is_same<int, decltype(c)>::value == false, "");
+      static_assert(is_same<int, decltype(v)>::value == false, "");
+      auto ac = c;
+      auto av = v;
+      auto sumi = ac + av + 'x';
+      auto sumf = ac + av + 1.0;
+      static_assert(is_same<int, decltype(ac)>::value == true, "");
+      static_assert(is_same<int, decltype(av)>::value == true, "");
+      static_assert(is_same<int, decltype(sumi)>::value == true, "");
+      static_assert(is_same<int, decltype(sumf)>::value == false, "");
+      static_assert(is_same<int, decltype(add(c, v))>::value == true, "");
+      return (sumf > 0.0) ? sumi : add(c, v);
+    }
+
+  }
+
+  namespace test_noexcept
+  {
+
+    int f() { return 0; }
+    int g() noexcept { return 0; }
+
+    static_assert(noexcept(f()) == false, "");
+    static_assert(noexcept(g()) == true, "");
+
+  }
+
+  namespace test_constexpr
+  {
+
+    template < typename CharT >
+    unsigned long constexpr
+    strlen_c_r(const CharT *const s, const unsigned long acc) noexcept
+    {
+      return *s ? strlen_c_r(s + 1, acc + 1) : acc;
+    }
+
+    template < typename CharT >
+    unsigned long constexpr
+    strlen_c(const CharT *const s) noexcept
+    {
+      return strlen_c_r(s, 0UL);
+    }
+
+    static_assert(strlen_c("") == 0UL, "");
+    static_assert(strlen_c("1") == 1UL, "");
+    static_assert(strlen_c("example") == 7UL, "");
+    static_assert(strlen_c("another\0example") == 7UL, "");
+
+  }
+
+  namespace test_rvalue_references
+  {
+
+    template < int N >
+    struct answer
+    {
+      static constexpr int value = N;
+    };
+
+    answer<1> f(int&)       { return answer<1>(); }
+    answer<2> f(const int&) { return answer<2>(); }
+    answer<3> f(int&&)      { return answer<3>(); }
+
+    void
+    test()
+    {
+      int i = 0;
+      const int c = 0;
+      static_assert(decltype(f(i))::value == 1, "");
+      static_assert(decltype(f(c))::value == 2, "");
+      static_assert(decltype(f(0))::value == 3, "");
+    }
+
+  }
+
+  namespace test_uniform_initialization
+  {
+
+    struct test
+    {
+      static const int zero {};
+      static const int one {1};
+    };
+
+    static_assert(test::zero == 0, "");
+    static_assert(test::one == 1, "");
+
+  }
+
+  namespace test_lambdas
+  {
+
+    void
+    test1()
+    {
+      auto lambda1 = [](){};
+      auto lambda2 = lambda1;
+      lambda1();
+      lambda2();
+    }
+
+    int
+    test2()
+    {
+      auto a = [](int i, int j){ return i + j; }(1, 2);
+      auto b = []() -> int { return '0'; }();
+      auto c = [=](){ return a + b; }();
+      auto d = [&](){ return c; }();
+      auto e = [a, &b](int x) mutable {
+        const auto identity = [](int y){ return y; };
+        for (auto i = 0; i < a; ++i)
+          a += b--;
+        return x + identity(a + b);
+      }(0);
+      return a + b + c + d + e;
+    }
+
+    int
+    test3()
+    {
+      const auto nullary = [](){ return 0; };
+      const auto unary = [](int x){ return x; };
+      using nullary_t = decltype(nullary);
+      using unary_t = decltype(unary);
+      const auto higher1st = [](nullary_t f){ return f(); };
+      const auto higher2nd = [unary](nullary_t f1){
+        return [unary, f1](unary_t f2){ return f2(unary(f1())); };
+      };
+      return higher1st(nullary) + higher2nd(nullary)(unary);
+    }
+
+  }
+
+  namespace test_variadic_templates
+  {
+
+    template <int...>
+    struct sum;
+
+    template <int N0, int... N1toN>
+    struct sum<N0, N1toN...>
+    {
+      static constexpr auto value = N0 + sum<N1toN...>::value;
+    };
+
+    template <>
+    struct sum<>
+    {
+      static constexpr auto value = 0;
+    };
+
+    static_assert(sum<>::value == 0, "");
+    static_assert(sum<1>::value == 1, "");
+    static_assert(sum<23>::value == 23, "");
+    static_assert(sum<1, 2>::value == 3, "");
+    static_assert(sum<5, 5, 11>::value == 21, "");
+    static_assert(sum<2, 3, 5, 7, 11, 13>::value == 41, "");
+
+  }
+
+  // http://stackoverflow.com/questions/13728184/template-aliases-and-sfinae
+  // Clang 3.1 fails with headers of libstd++ 4.8.3 when using std::function
+  // because of this.
+  namespace test_template_alias_sfinae
+  {
+
+    struct foo {};
+
+    template<typename T>
+    using member = typename T::member_type;
+
+    template<typename T>
+    void func(...) {}
+
+    template<typename T>
+    void func(member<T>*) {}
+
+    void test();
+
+    void test() { func<foo>(0); }
+
+  }
+
+}  // namespace cxx11
+
+#endif  // __cplusplus >= 201103L
+
+]])
+
+
+dnl  Tests for new features in C++14
+
+m4_define([_AX_CXX_COMPILE_STDCXX_testbody_new_in_14], [[
+
+// If the compiler admits that it is not ready for C++14, why torture it?
+// Hopefully, this will speed up the test.
+
+#ifndef __cplusplus
+
+#error "This is not a C++ compiler"
+
+#elif __cplusplus < 201402L
+
+#error "This is not a C++14 compiler"
+
+#else
+
+namespace cxx14
+{
+
+  namespace test_polymorphic_lambdas
+  {
+
+    int
+    test()
+    {
+      const auto lambda = [](auto&&... args){
+        const auto istiny = [](auto x){
+          return (sizeof(x) == 1UL) ? 1 : 0;
+        };
+        const int aretiny[] = { istiny(args)... };
+        return aretiny[0];
+      };
+      return lambda(1, 1L, 1.0f, '1');
+    }
+
+  }
+
+  namespace test_binary_literals
+  {
+
+    constexpr auto ivii = 0b0000000000101010;
+    static_assert(ivii == 42, "wrong value");
+
+  }
+
+  namespace test_generalized_constexpr
+  {
+
+    template < typename CharT >
+    constexpr unsigned long
+    strlen_c(const CharT *const s) noexcept
+    {
+      auto length = 0UL;
+      for (auto p = s; *p; ++p)
+        ++length;
+      return length;
+    }
+
+    static_assert(strlen_c("") == 0UL, "");
+    static_assert(strlen_c("x") == 1UL, "");
+    static_assert(strlen_c("test") == 4UL, "");
+    static_assert(strlen_c("another\0test") == 7UL, "");
+
+  }
+
+  namespace test_lambda_init_capture
+  {
+
+    int
+    test()
+    {
+      auto x = 0;
+      const auto lambda1 = [a = x](int b){ return a + b; };
+      const auto lambda2 = [a = lambda1(x)](){ return a; };
+      return lambda2();
+    }
+
+  }
+
+  namespace test_digit_seperators
+  {
+
+    constexpr auto ten_million = 100'000'000;
+    static_assert(ten_million == 100000000, "");
+
+  }
+
+  namespace test_return_type_deduction
+  {
+
+    auto f(int& x) { return x; }
+    decltype(auto) g(int& x) { return x; }
+
+    template < typename T1, typename T2 >
+    struct is_same
+    {
+      static constexpr auto value = false;
+    };
+
+    template < typename T >
+    struct is_same<T, T>
+    {
+      static constexpr auto value = true;
+    };
+
+    int
+    test()
+    {
+      auto x = 0;
+      static_assert(is_same<int, decltype(f(x))>::value, "");
+      static_assert(is_same<int&, decltype(g(x))>::value, "");
+      return x;
+    }
+
+  }
+
+}  // namespace cxx14
+
+#endif  // __cplusplus >= 201402L
+
+]])
+
+# ============================================================================
+#  http://www.gnu.org/software/autoconf-archive/ax_cxx_compile_stdcxx_0x.html
+# ============================================================================
+#
+# SYNOPSIS
+#
+#   AX_CXX_COMPILE_STDCXX_0X
+#
+# DESCRIPTION
+#
+#   Check for baseline language coverage in the compiler for the C++0x
+#   standard.
+#
+#   This macro is deprecated and has been superseded by the
+#   AX_CXX_COMPILE_STDCXX_11 macro which should be used instead.
+#
+# LICENSE
+#
+#   Copyright (c) 2008 Benjamin Kosnik <bkoz@redhat.com>
+#
+#   Copying and distribution of this file, with or without modification, are
+#   permitted in any medium without royalty provided the copyright notice
+#   and this notice are preserved. This file is offered as-is, without any
+#   warranty.
+
+#serial 10
+
+AU_ALIAS([AC_CXX_COMPILE_STDCXX_0X], [AX_CXX_COMPILE_STDCXX_0X])
+AC_DEFUN([AX_CXX_COMPILE_STDCXX_0X], [
+  AC_OBSOLETE([$0], [; use AX_CXX_COMPILE_STDCXX_11 instead])
+  AC_CACHE_CHECK(if g++ supports C++0x features without additional flags,
+  ax_cv_cxx_compile_cxx0x_native,
+  [AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  AC_TRY_COMPILE([
+  template <typename T>
+    struct check
+    {
+      static_assert(sizeof(int) <= sizeof(T), "not big enough");
+    };
+
+    typedef check<check<bool>> right_angle_brackets;
+
+    int a;
+    decltype(a) b;
+
+    typedef check<int> check_type;
+    check_type c;
+    check_type&& cr = static_cast<check_type&&>(c);],,
+  ax_cv_cxx_compile_cxx0x_native=yes, ax_cv_cxx_compile_cxx0x_native=no)
+  AC_LANG_RESTORE
+  ])
+
+  AC_CACHE_CHECK(if g++ supports C++0x features with -std=c++0x,
+  ax_cv_cxx_compile_cxx0x_cxx,
+  [AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  ac_save_CXX="$CXX"
+  CXX="$CXX -std=c++0x"
+  AC_TRY_COMPILE([
+  template <typename T>
+    struct check
+    {
+      static_assert(sizeof(int) <= sizeof(T), "not big enough");
+    };
+
+    typedef check<check<bool>> right_angle_brackets;
+
+    int a;
+    decltype(a) b;
+
+    typedef check<int> check_type;
+    check_type c;
+    check_type&& cr = static_cast<check_type&&>(c);],,
+  ax_cv_cxx_compile_cxx0x_cxx=yes, ax_cv_cxx_compile_cxx0x_cxx=no)
+  CXX="$ac_save_CXX"
+  AC_LANG_RESTORE
+  ])
+
+  AC_CACHE_CHECK(if g++ supports C++0x features with -std=gnu++0x,
+  ax_cv_cxx_compile_cxx0x_gxx,
+  [AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  ac_save_CXX="$CXX"
+  CXX="$CXX -std=gnu++0x"
+  AC_TRY_COMPILE([
+  template <typename T>
+    struct check
+    {
+      static_assert(sizeof(int) <= sizeof(T), "not big enough");
+    };
+
+    typedef check<check<bool>> right_angle_brackets;
+
+    int a;
+    decltype(a) b;
+
+    typedef check<int> check_type;
+    check_type c;
+    check_type&& cr = static_cast<check_type&&>(c);],,
+  ax_cv_cxx_compile_cxx0x_gxx=yes, ax_cv_cxx_compile_cxx0x_gxx=no)
+  CXX="$ac_save_CXX"
+  AC_LANG_RESTORE
+  ])
+
+  if test "$ax_cv_cxx_compile_cxx0x_native" = yes ||
+     test "$ax_cv_cxx_compile_cxx0x_cxx" = yes ||
+     test "$ax_cv_cxx_compile_cxx0x_gxx" = yes; then
+    AC_DEFINE(HAVE_STDCXX_0X,,[Define if g++ supports C++0x features. ])
+  fi
+])
+
+# ============================================================================
+#  http://www.gnu.org/software/autoconf-archive/ax_cxx_compile_stdcxx_11.html
+# ============================================================================
+#
+# SYNOPSIS
+#
+#   AX_CXX_COMPILE_STDCXX_11([ext|noext], [mandatory|optional])
+#
+# DESCRIPTION
+#
+#   Check for baseline language coverage in the compiler for the C++11
+#   standard; if necessary, add switches to CXX to enable support.
+#
+#   This macro is a convenience alias for calling the AX_CXX_COMPILE_STDCXX
+#   macro with the version set to C++11.  The two optional arguments are
+#   forwarded literally as the second and third argument respectively.
+#   Please see the documentation for the AX_CXX_COMPILE_STDCXX macro for
+#   more information.  If you want to use this macro, you also need to
+#   download the ax_cxx_compile_stdcxx.m4 file.
+#
+# LICENSE
+#
+#   Copyright (c) 2008 Benjamin Kosnik <bkoz@redhat.com>
+#   Copyright (c) 2012 Zack Weinberg <zackw@panix.com>
+#   Copyright (c) 2013 Roy Stogner <roystgnr@ices.utexas.edu>
+#   Copyright (c) 2014, 2015 Google Inc.; contributed by Alexey Sokolov <sokolov@google.com>
+#   Copyright (c) 2015 Paul Norman <penorman@mac.com>
+#   Copyright (c) 2015 Moritz Klammler <moritz@klammler.eu>
+#
+#   Copying and distribution of this file, with or without modification, are
+#   permitted in any medium without royalty provided the copyright notice
+#   and this notice are preserved. This file is offered as-is, without any
+#   warranty.
+
+#serial 15
+
+include([ax_cxx_compile_stdcxx.m4])
+
+AC_DEFUN([AX_CXX_COMPILE_STDCXX_11], [AX_CXX_COMPILE_STDCXX([11], [$1], [$2])])
+
+# ============================================================================
+#  http://www.gnu.org/software/autoconf-archive/ax_cxx_compile_stdcxx_14.html
+# ============================================================================
+#
+# SYNOPSIS
+#
+#   AX_CXX_COMPILE_STDCXX_14([ext|noext], [mandatory|optional])
+#
+# DESCRIPTION
+#
+#   Check for baseline language coverage in the compiler for the C++14
+#   standard; if necessary, add switches to CXX to enable support.
+#
+#   This macro is a convenience alias for calling the AX_CXX_COMPILE_STDCXX
+#   macro with the version set to C++14.  The two optional arguments are
+#   forwarded literally as the second and third argument respectively.
+#   Please see the documentation for the AX_CXX_COMPILE_STDCXX macro for
+#   more information.  If you want to use this macro, you also need to
+#   download the ax_cxx_compile_stdcxx.m4 file.
+#
+# LICENSE
+#
+#   Copyright (c) 2015 Moritz Klammler <moritz@klammler.eu>
+#
+#   Copying and distribution of this file, with or without modification, are
+#   permitted in any medium without royalty provided the copyright notice
+#   and this notice are preserved. This file is offered as-is, without any
+#   warranty.
+
+#serial 2
+
+include([ax_cxx_compile_stdcxx.m4])
+
+AC_DEFUN([AX_CXX_COMPILE_STDCXX_14], [AX_CXX_COMPILE_STDCXX([14], [$1], [$2])])
+
+# ===========================================================================
+#      http://www.gnu.org/software/autoconf-archive/ax_gcc_archflag.html
+# ===========================================================================
+#
+# SYNOPSIS
+#
+#   AX_GCC_ARCHFLAG([PORTABLE?], [ACTION-SUCCESS], [ACTION-FAILURE])
+#
+# DESCRIPTION
+#
+#   This macro tries to guess the "native" arch corresponding to the target
+#   architecture for use with gcc's -march=arch or -mtune=arch flags. If
+#   found, the cache variable $ax_cv_gcc_archflag is set to this flag and
+#   ACTION-SUCCESS is executed; otherwise $ax_cv_gcc_archflag is set to
+#   "unknown" and ACTION-FAILURE is executed. The default ACTION-SUCCESS is
+#   to add $ax_cv_gcc_archflag to the end of $CFLAGS.
+#
+#   PORTABLE? should be either [yes] (default) or [no]. In the former case,
+#   the flag is set to -mtune (or equivalent) so that the architecture is
+#   only used for tuning, but the instruction set used is still portable. In
+#   the latter case, the flag is set to -march (or equivalent) so that
+#   architecture-specific instructions are enabled.
+#
+#   The user can specify --with-gcc-arch=<arch> in order to override the
+#   macro's choice of architecture, or --without-gcc-arch to disable this.
+#
+#   When cross-compiling, or if $CC is not gcc, then ACTION-FAILURE is
+#   called unless the user specified --with-gcc-arch manually.
+#
+#   Requires macros: AX_CHECK_COMPILE_FLAG, AX_GCC_X86_CPUID
+#
+#   (The main emphasis here is on recent CPUs, on the principle that doing
+#   high-performance computing on old hardware is uncommon.)
+#
+# LICENSE
+#
+#   Copyright (c) 2008 Steven G. Johnson <stevenj@alum.mit.edu>
+#   Copyright (c) 2008 Matteo Frigo
+#   Copyright (c) 2014 Tsukasa Oi
+#
+#   This program is free software: you can redistribute it and/or modify it
+#   under the terms of the GNU General Public License as published by the
+#   Free Software Foundation, either version 3 of the License, or (at your
+#   option) any later version.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+#   Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License along
+#   with this program. If not, see <http://www.gnu.org/licenses/>.
+#
+#   As a special exception, the respective Autoconf Macro's copyright owner
+#   gives unlimited permission to copy, distribute and modify the configure
+#   scripts that are the output of Autoconf when processing the Macro. You
+#   need not follow the terms of the GNU General Public License when using
+#   or distributing such scripts, even though portions of the text of the
+#   Macro appear in them. The GNU General Public License (GPL) does govern
+#   all other use of the material that constitutes the Autoconf Macro.
+#
+#   This special exception to the GPL applies to versions of the Autoconf
+#   Macro released by the Autoconf Archive. When you make and distribute a
+#   modified version of the Autoconf Macro, you may extend this special
+#   exception to the GPL to apply to your modified version as well.
+
+#serial 17
+
+AC_DEFUN([AX_GCC_ARCHFLAG],
+[AC_REQUIRE([AC_PROG_CC])
+AC_REQUIRE([AC_CANONICAL_HOST])
+AC_REQUIRE([AC_PROG_SED])
+AC_REQUIRE([AX_COMPILER_VENDOR])
+
+AC_ARG_WITH(gcc-arch, [AS_HELP_STRING([--with-gcc-arch=<arch>], [use architecture <arch> for gcc -march/-mtune, instead of guessing])],
+	ax_gcc_arch=$withval, ax_gcc_arch=yes)
+
+AC_MSG_CHECKING([for gcc architecture flag])
+AC_MSG_RESULT([])
+AC_CACHE_VAL(ax_cv_gcc_archflag,
+[
+ax_cv_gcc_archflag="unknown"
+
+if test "$GCC" = yes; then
+
+if test "x$ax_gcc_arch" = xyes; then
+ax_gcc_arch=""
+if test "$cross_compiling" = no; then
+case $host_cpu in
+  i[[3456]]86*|x86_64*|amd64*) # use cpuid codes
+     AX_GCC_X86_CPUID(0)
+     AX_GCC_X86_CPUID(1)
+     case $ax_cv_gcc_x86_cpuid_0 in
+       *:756e6547:6c65746e:49656e69) # Intel
+          case $ax_cv_gcc_x86_cpuid_1 in
+	    *5[[4578]]?:*:*:*) ax_gcc_arch="pentium-mmx pentium" ;;
+	    *5[[123]]?:*:*:*) ax_gcc_arch=pentium ;;
+	    *0?61?:*:*:*|?61?:*:*:*|61?:*:*:*) ax_gcc_arch=pentiumpro ;;
+	    *0?6[[356]]?:*:*:*|?6[[356]]?:*:*:*|6[[356]]?:*:*:*) ax_gcc_arch="pentium2 pentiumpro" ;;
+	    *0?6[[78ab]]?:*:*:*|?6[[78ab]]?:*:*:*|6[[78ab]]?:*:*:*) ax_gcc_arch="pentium3 pentiumpro" ;;
+	    *0?6[[9d]]?:*:*:*|?6[[9d]]?:*:*:*|6[[9d]]?:*:*:*|*1?65?:*:*:*) ax_gcc_arch="pentium-m pentium3 pentiumpro" ;;
+	    *0?6e?:*:*:*|?6e?:*:*:*|6e?:*:*:*) ax_gcc_arch="yonah pentium-m pentium3 pentiumpro" ;;
+	    *0?6f?:*:*:*|?6f?:*:*:*|6f?:*:*:*|*1?66?:*:*:*) ax_gcc_arch="core2 pentium-m pentium3 pentiumpro" ;;
+	    *1?6[[7d]]?:*:*:*) ax_gcc_arch="penryn core2 pentium-m pentium3 pentiumpro" ;;
+	    *1?6[[aef]]?:*:*:*|*2?6e?:*:*:*) ax_gcc_arch="nehalem corei7 core2 pentium-m pentium3 pentiumpro" ;;
+	    *2?6[[5cf]]?:*:*:*) ax_gcc_arch="westmere corei7 core2 pentium-m pentium3 pentiumpro" ;;
+	    *2?6[[ad]]?:*:*:*) ax_gcc_arch="sandybridge corei7-avx corei7 core2 pentium-m pentium3 pentiumpro" ;;
+	    *3?6[[ae]]?:*:*:*) ax_gcc_arch="ivybridge core-avx-i corei7-avx corei7 core2 pentium-m pentium3 pentiumpro" ;;
+	    *3?6[[cf]]?:*:*:*|*4?6[[56]]?:*:*:*) ax_gcc_arch="haswell core-avx2 core-avx-i corei7-avx corei7 core2 pentium-m pentium3 pentiumpro" ;;
+	    *3?6d?:*:*:*) ax_gcc_arch="broadwell core-avx2 core-avx-i corei7-avx corei7 core2 pentium-m pentium3 pentiumpro" ;;
+	    *1?6c?:*:*:*|*2?6[[67]]?:*:*:*|*3?6[[56]]?:*:*:*) ax_gcc_arch="bonnell atom core2 pentium-m pentium3 pentiumpro" ;;
+	    *3?67?:*:*:*|*[[45]]?6[[ad]]?:*:*:*) ax_gcc_arch="silvermont atom core2 pentium-m pentium3 pentiumpro" ;;
+	    *000?f[[012]]?:*:*:*|?f[[012]]?:*:*:*|f[[012]]?:*:*:*) ax_gcc_arch="pentium4 pentiumpro" ;;
+	    *000?f[[346]]?:*:*:*|?f[[346]]?:*:*:*|f[[346]]?:*:*:*) ax_gcc_arch="nocona prescott pentium4 pentiumpro" ;;
+	    # fallback
+	    *5??:*:*:*) ax_gcc_arch=pentium ;;
+	    *??6??:*:*:*) ax_gcc_arch="core2 pentiumpro" ;;
+	    *6??:*:*:*) ax_gcc_arch=pentiumpro ;;
+	    *00??f??:*:*:*|??f??:*:*:*|?f??:*:*:*|f??:*:*:*) ax_gcc_arch="pentium4 pentiumpro" ;;
+          esac ;;
+       *:68747541:444d4163:69746e65) # AMD
+          case $ax_cv_gcc_x86_cpuid_1 in
+	    *5[[67]]?:*:*:*) ax_gcc_arch=k6 ;;
+	    *5[[8]]?:*:*:*) ax_gcc_arch="k6-2 k6" ;;
+	    *5[[9d]]?:*:*:*) ax_gcc_arch="k6-3 k6" ;;
+	    *6[[12]]?:*:*:*) ax_gcc_arch="athlon k7" ;;
+	    *6[[34]]?:*:*:*) ax_gcc_arch="athlon-tbird k7" ;;
+	    *6[[678a]]?:*:*:*) ax_gcc_arch="athlon-xp athlon-4 athlon k7" ;;
+	    *000?f[[4578bcef]]?:*:*:*|?f[[4578bcef]]?:*:*:*|f[[4578bcef]]?:*:*:*|*001?f[[4578bcf]]?:*:*:*|1?f[[4578bcf]]?:*:*:*) ax_gcc_arch="athlon64 k8" ;;
+	    *002?f[[13457bcf]]?:*:*:*|2?f[[13457bcf]]?:*:*:*|*004?f[[138bcf]]?:*:*:*|4?f[[138bcf]]?:*:*:*|*005?f[[df]]?:*:*:*|5?f[[df]]?:*:*:*|*006?f[[8bcf]]?:*:*:*|6?f[[8bcf]]?:*:*:*|*007?f[[cf]]?:*:*:*|7?f[[cf]]?:*:*:*|*00c?f1?:*:*:*|c?f1?:*:*:*|*020?f3?:*:*:*|20?f3?:*:*:*) ax_gcc_arch="athlon64-sse3 k8-sse3 athlon64 k8" ;;
+	    *010?f[[245689a]]?:*:*:*|10?f[[245689a]]?:*:*:*|*030?f1?:*:*:*|30?f1?:*:*:*) ax_gcc_arch="barcelona amdfam10 k8" ;;
+	    *050?f[[12]]?:*:*:*|50?f[[12]]?:*:*:*) ax_gcc_arch="btver1 amdfam10 k8" ;;
+	    *060?f1?:*:*:*|60?f1?:*:*:*) ax_gcc_arch="bdver1 amdfam10 k8" ;;
+	    *060?f2?:*:*:*|60?f2?:*:*:*|*061?f[[03]]?:*:*:*|61?f[[03]]?:*:*:*) ax_gcc_arch="bdver2 bdver1 amdfam10 k8" ;;
+	    *063?f0?:*:*:*|63?f0?:*:*:*) ax_gcc_arch="bdver3 bdver2 bdver1 amdfam10 k8" ;;
+	    *07[[03]]?f0?:*:*:*|7[[03]]?f0?:*:*:*) ax_gcc_arch="btver2 btver1 amdfam10 k8" ;;
+	    # fallback
+	    *0[[13]]??f??:*:*:*|[[13]]??f??:*:*:*) ax_gcc_arch="barcelona amdfam10 k8" ;;
+	    *020?f??:*:*:*|20?f??:*:*:*) ax_gcc_arch="athlon64-sse3 k8-sse3 athlon64 k8" ;;
+	    *05??f??:*:*:*|5??f??:*:*:*) ax_gcc_arch="btver1 amdfam10 k8" ;;
+	    *060?f??:*:*:*|60?f??:*:*:*) ax_gcc_arch="bdver1 amdfam10 k8" ;;
+	    *061?f??:*:*:*|61?f??:*:*:*) ax_gcc_arch="bdver2 bdver1 amdfam10 k8" ;;
+	    *06??f??:*:*:*|6??f??:*:*:*) ax_gcc_arch="bdver3 bdver2 bdver1 amdfam10 k8" ;;
+	    *070?f??:*:*:*|70?f??:*:*:*) ax_gcc_arch="btver2 btver1 amdfam10 k8" ;;
+	    *???f??:*:*:*) ax_gcc_arch="amdfam10 k8" ;;
+          esac ;;
+	*:746e6543:736c7561:48727561) # IDT / VIA (Centaur)
+	   case $ax_cv_gcc_x86_cpuid_1 in
+	     *54?:*:*:*) ax_gcc_arch=winchip-c6 ;;
+	     *5[[89]]?:*:*:*) ax_gcc_arch=winchip2 ;;
+	     *66?:*:*:*) ax_gcc_arch=winchip2 ;;
+	     *6[[78]]?:*:*:*) ax_gcc_arch=c3 ;;
+	     *6[[9adf]]?:*:*:*) ax_gcc_arch="c3-2 c3" ;;
+	   esac ;;
+     esac
+     if test x"$ax_gcc_arch" = x; then # fallback
+	case $host_cpu in
+	  i586*) ax_gcc_arch=pentium ;;
+	  i686*) ax_gcc_arch=pentiumpro ;;
+        esac
+     fi
+     ;;
+
+  sparc*)
+     AC_PATH_PROG([PRTDIAG], [prtdiag], [prtdiag], [$PATH:/usr/platform/`uname -i`/sbin/:/usr/platform/`uname -m`/sbin/])
+     cputype=`(((grep cpu /proc/cpuinfo | cut -d: -f2) ; ($PRTDIAG -v |grep -i sparc) ; grep -i cpu /var/run/dmesg.boot ) | head -n 1) 2> /dev/null`
+     cputype=`echo "$cputype" | tr -d ' -' | $SED 's/SPARCIIi/SPARCII/' |tr $as_cr_LETTERS $as_cr_letters`
+     case $cputype in
+         *ultrasparciv*) ax_gcc_arch="ultrasparc4 ultrasparc3 ultrasparc v9" ;;
+         *ultrasparciii*) ax_gcc_arch="ultrasparc3 ultrasparc v9" ;;
+         *ultrasparc*) ax_gcc_arch="ultrasparc v9" ;;
+         *supersparc*|*tms390z5[[05]]*) ax_gcc_arch="supersparc v8" ;;
+         *hypersparc*|*rt62[[056]]*) ax_gcc_arch="hypersparc v8" ;;
+         *cypress*) ax_gcc_arch=cypress ;;
+     esac ;;
+
+  alphaev5) ax_gcc_arch=ev5 ;;
+  alphaev56) ax_gcc_arch=ev56 ;;
+  alphapca56) ax_gcc_arch="pca56 ev56" ;;
+  alphapca57) ax_gcc_arch="pca57 pca56 ev56" ;;
+  alphaev6) ax_gcc_arch=ev6 ;;
+  alphaev67) ax_gcc_arch=ev67 ;;
+  alphaev68) ax_gcc_arch="ev68 ev67" ;;
+  alphaev69) ax_gcc_arch="ev69 ev68 ev67" ;;
+  alphaev7) ax_gcc_arch="ev7 ev69 ev68 ev67" ;;
+  alphaev79) ax_gcc_arch="ev79 ev7 ev69 ev68 ev67" ;;
+
+  powerpc*)
+     cputype=`((grep cpu /proc/cpuinfo | head -n 1 | cut -d: -f2 | cut -d, -f1 | $SED 's/ //g') ; /usr/bin/machine ; /bin/machine; grep CPU /var/run/dmesg.boot | head -n 1 | cut -d" " -f2) 2> /dev/null`
+     cputype=`echo $cputype | $SED -e 's/ppc//g;s/ *//g'`
+     case $cputype in
+       *750*) ax_gcc_arch="750 G3" ;;
+       *740[[0-9]]*) ax_gcc_arch="$cputype 7400 G4" ;;
+       *74[[4-5]][[0-9]]*) ax_gcc_arch="$cputype 7450 G4" ;;
+       *74[[0-9]][[0-9]]*) ax_gcc_arch="$cputype G4" ;;
+       *970*) ax_gcc_arch="970 G5 power4";;
+       *POWER4*|*power4*|*gq*) ax_gcc_arch="power4 970";;
+       *POWER5*|*power5*|*gr*|*gs*) ax_gcc_arch="power5 power4 970";;
+       603ev|8240) ax_gcc_arch="$cputype 603e 603";;
+       *) ax_gcc_arch=$cputype ;;
+     esac
+     ax_gcc_arch="$ax_gcc_arch powerpc"
+     ;;
+esac
+fi # not cross-compiling
+fi # guess arch
+
+if test "x$ax_gcc_arch" != x -a "x$ax_gcc_arch" != xno; then
+if test "x[]m4_default([$1],yes)" = xyes; then # if we require portable code
+  flag_prefixes="-mtune="
+  if test "x$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" = xclang; then flag_prefixes="-march="; fi
+  # -mcpu=$arch and m$arch generate nonportable code on every arch except
+  # x86.  And some other arches (e.g. Alpha) don't accept -mtune.  Grrr.
+  case $host_cpu in i*86|x86_64*|amd64*) flag_prefixes="$flag_prefixes -mcpu= -m";; esac
+else
+  flag_prefixes="-march= -mcpu= -m"
+fi
+for flag_prefix in $flag_prefixes; do
+  for arch in $ax_gcc_arch; do
+    flag="$flag_prefix$arch"
+    AX_CHECK_COMPILE_FLAG($flag, [if test "x$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" = xclang; then
+      if test "x[]m4_default([$1],yes)" = xyes; then
+	if test "x$flag" = "x-march=$arch"; then flag=-mtune=$arch; fi
+      fi
+    fi; ax_cv_gcc_archflag=$flag; break])
+  done
+  test "x$ax_cv_gcc_archflag" = xunknown || break
+done
+fi
+
+fi # $GCC=yes
+])
+AC_MSG_CHECKING([for gcc architecture flag])
+AC_MSG_RESULT($ax_cv_gcc_archflag)
+if test "x$ax_cv_gcc_archflag" = xunknown; then
+  m4_default([$3],:)
+else
+  m4_default([$2], [CFLAGS="$CFLAGS $ax_cv_gcc_archflag"])
+fi
+])
+
+# ===========================================================================
+#     http://www.gnu.org/software/autoconf-archive/ax_gcc_x86_cpuid.html
+# ===========================================================================
+#
+# SYNOPSIS
+#
+#   AX_GCC_X86_CPUID(OP)
+#   AX_GCC_X86_CPUID_COUNT(OP, COUNT)
+#
+# DESCRIPTION
+#
+#   On Pentium and later x86 processors, with gcc or a compiler that has a
+#   compatible syntax for inline assembly instructions, run a small program
+#   that executes the cpuid instruction with input OP. This can be used to
+#   detect the CPU type. AX_GCC_X86_CPUID_COUNT takes an additional COUNT
+#   parameter that gets passed into register ECX before calling cpuid.
+#
+#   On output, the values of the eax, ebx, ecx, and edx registers are stored
+#   as hexadecimal strings as "eax:ebx:ecx:edx" in the cache variable
+#   ax_cv_gcc_x86_cpuid_OP.
+#
+#   If the cpuid instruction fails (because you are running a
+#   cross-compiler, or because you are not using gcc, or because you are on
+#   a processor that doesn't have this instruction), ax_cv_gcc_x86_cpuid_OP
+#   is set to the string "unknown".
+#
+#   This macro mainly exists to be used in AX_GCC_ARCHFLAG.
+#
+# LICENSE
+#
+#   Copyright (c) 2008 Steven G. Johnson <stevenj@alum.mit.edu>
+#   Copyright (c) 2008 Matteo Frigo
+#   Copyright (c) 2015 Michael Petch <mpetch@capp-sysware.com>
+#
+#   This program is free software: you can redistribute it and/or modify it
+#   under the terms of the GNU General Public License as published by the
+#   Free Software Foundation, either version 3 of the License, or (at your
+#   option) any later version.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+#   Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License along
+#   with this program. If not, see <http://www.gnu.org/licenses/>.
+#
+#   As a special exception, the respective Autoconf Macro's copyright owner
+#   gives unlimited permission to copy, distribute and modify the configure
+#   scripts that are the output of Autoconf when processing the Macro. You
+#   need not follow the terms of the GNU General Public License when using
+#   or distributing such scripts, even though portions of the text of the
+#   Macro appear in them. The GNU General Public License (GPL) does govern
+#   all other use of the material that constitutes the Autoconf Macro.
+#
+#   This special exception to the GPL applies to versions of the Autoconf
+#   Macro released by the Autoconf Archive. When you make and distribute a
+#   modified version of the Autoconf Macro, you may extend this special
+#   exception to the GPL to apply to your modified version as well.
+
+#serial 9
+
+AC_DEFUN([AX_GCC_X86_CPUID],
+[AX_GCC_X86_CPUID_COUNT($1, 0)
+])
+
+AC_DEFUN([AX_GCC_X86_CPUID_COUNT],
+[AC_REQUIRE([AC_PROG_CC])
+AC_LANG_PUSH([C])
+AC_CACHE_CHECK(for x86 cpuid $1 output, ax_cv_gcc_x86_cpuid_$1,
+ [AC_RUN_IFELSE([AC_LANG_PROGRAM([#include <stdio.h>], [
+     int op = $1, level = $2, eax, ebx, ecx, edx;
+     FILE *f;
+      __asm__ __volatile__ ("xchg %%ebx, %1\n"
+        "cpuid\n"
+        "xchg %%ebx, %1\n"
+        : "=a" (eax), "=r" (ebx), "=c" (ecx), "=d" (edx)
+        : "a" (op), "2" (level));
+
+     f = fopen("conftest_cpuid", "w"); if (!f) return 1;
+     fprintf(f, "%x:%x:%x:%x\n", eax, ebx, ecx, edx);
+     fclose(f);
+     return 0;
+])],
+     [ax_cv_gcc_x86_cpuid_$1=`cat conftest_cpuid`; rm -f conftest_cpuid],
+     [ax_cv_gcc_x86_cpuid_$1=unknown; rm -f conftest_cpuid],
+     [ax_cv_gcc_x86_cpuid_$1=unknown])])
+AC_LANG_POP([C])
+])
+
 # libtool.m4 - Configure libtool for the host system. -*-Autoconf-*-
 #
 #   Copyright (C) 1996-2001, 2003-2015 Free Software Foundation, Inc.

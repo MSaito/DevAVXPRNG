@@ -24,7 +24,7 @@ namespace MTToolBox {
         U wseed;
         wseed.u64[0] = opt.seed;
         sf.seed(wseed);
-        Annihilate<G, U, uint32_t> annihilate;
+        Annihilate<G, U> annihilate;
         if (!annihilate.anni(sf)) {
             return -1;
         }

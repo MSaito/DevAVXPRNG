@@ -125,7 +125,7 @@ namespace MTToolBox {
      * but is not a subclass of some abstract class.
      * Instead, this class is passed to them as template parameters.
      */
-    class SFMTAVX512F : public ReducibleGenerator<w512_t, uint32_t> {
+    class SFMTAVX512F : public ReducibleGenerator<w512_t> {
     public:
         /**
          * Constructor by mexp.
@@ -198,7 +198,7 @@ namespace MTToolBox {
             reverse_bit_flag = false;
         }
 
-        EquidistributionCalculatable<w512_t, uint32_t> * clone() const {
+        EquidistributionCalculatable<w512_t> * clone() const {
             return new SFMTAVX512F(*this);
         }
 
@@ -338,31 +338,31 @@ namespace MTToolBox {
          * internal id
          * @param num sequential number
          */
-        void setUpParam(AbstractGenerator<uint32_t>& mt) {
+        void setUpParam(ParameterGenerator& mt) {
             if (param.mexp == 1279) {
                 param.pos1 = 1;
             } else {
-                param.pos1 = mt.generate() % (size - 2) + 1;
+                param.pos1 = mt.getUint32() % (size - 2) + 1;
             }
             if (fixedSL1 > 0) {
                 // These parameters are not best ones.
                 param.sl1 = fixedSL1;
             } else {
-                param.sl1 = mt.generate() % (64 - 1) + 1;
+                param.sl1 = mt.getUint32() % (64 - 1) + 1;
             }
             if (fixedSR1 > 0) {
                 // These parameters are not best ones.
                 param.sr1 = fixedSR1;
             } else {
-                param.sr1 = mt.generate() % (64 - 1) + 1;
+                param.sr1 = mt.getUint32() % (64 - 1) + 1;
             }
             if (fixedPerm > 0) {
                 param.perm = fixedPerm;
             } else {
-                param.perm = (mt.generate() % 8) * 2 + 1;
+                param.perm = (mt.getUint32() % 8) * 2 + 1;
             }
             for (int i = 0; i < 16; i++) {
-                param.mat1.u[i] = mt.generate() | mt.generate();
+                param.mat1.u[i] = mt.getUint32() | mt.getUint32();
             }
         }
 
@@ -434,7 +434,7 @@ namespace MTToolBox {
          * output function is GF(2)-linear.
          * @param that SFMTAVX512F generator added to this generator
          */
-        void add(EquidistributionCalculatable<w512_t, uint32_t>& other) {
+        void add(EquidistributionCalculatable<w512_t>& other) {
             SFMTAVX512F *that = dynamic_cast<SFMTAVX512F *>(&other);
             if (that == 0) {
                 throw std::invalid_argument(

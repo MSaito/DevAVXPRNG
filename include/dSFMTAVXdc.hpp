@@ -42,10 +42,10 @@ namespace MTToolBox {
         if (opt.fixedP) {
             g.setFixedPerm(opt.fixedPerm);
         }
-        AlgorithmReducibleRecursionSearch<U, uint64_t> ars(g, mt);
+        AlgorithmReducibleRecursionSearch<U> ars(g, mt);
         int i = 0;
         AlgorithmCalculateParity<U, G> cp;
-        Annihilate<G, U, uint64_t> annihilate;
+        Annihilate<G, U> annihilate;
         cout << "# " << g.getHeaderString() << ", delta52"
              << endl;
         while (i < count) {

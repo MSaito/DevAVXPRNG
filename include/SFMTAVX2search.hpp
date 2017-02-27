@@ -104,7 +104,7 @@ namespace MTToolBox {
         }
     };
 
-    class SFMTAVX2 : public ReducibleGenerator<w256_t, uint32_t> {
+    class SFMTAVX2 : public ReducibleGenerator<w256_t> {
     public:
         /**
          * Constructor by mexp.
@@ -169,7 +169,7 @@ namespace MTToolBox {
             reverse_bit_flag = false;
         }
 
-        EquidistributionCalculatable<w256_t, uint32_t> * clone() const {
+        EquidistributionCalculatable<w256_t> * clone() const {
             return new SFMTAVX2(*this);
         }
 
@@ -278,29 +278,29 @@ namespace MTToolBox {
             return w & mask;
         }
 
-        void setUpParam(AbstractGenerator<uint32_t>& mt) {
+        void setUpParam(ParameterGenerator& mt) {
             if (size == 2) {
                 param.pos1 = 1;
             } else {
-                param.pos1 = mt.generate() % (size - 1) + 1;
+                param.pos1 = mt.getUint32() % (size - 1) + 1;
             }
             if (fixedSL1 > 0) {
                 param.sl1 = fixedSL1;
             } else {
-                param.sl1 = mt.generate() % 32 + 1;
+                param.sl1 = mt.getUint32() % 32 + 1;
             }
             if (fixedSR1 > 0) {
                 param.sr1 = fixedSR1;
             } else {
-                param.sr1 = mt.generate() % 32 + 1;
+                param.sr1 = mt.getUint32() % 32 + 1;
             }
             if (fixedPerm > 0) {
                 param.perm = fixedPerm;
             } else {
-                param.perm = (mt.generate() % 4) * 2 + 1;
+                param.perm = (mt.getUint32() % 4) * 2 + 1;
             }
             for (int i = 0; i < 8; i++) {
-                param.mat1.u[i] = mt.generate() | mt.generate();
+                param.mat1.u[i] = mt.getUint32() | mt.getUint32();
             }
         }
 
@@ -360,7 +360,7 @@ namespace MTToolBox {
             }
         }
 
-        void add(EquidistributionCalculatable<w256_t, uint32_t>& other) {
+        void add(EquidistributionCalculatable<w256_t>& other) {
             SFMTAVX2 *that = dynamic_cast<SFMTAVX2 *>(&other);
             if (that == 0) {
                 throw std::invalid_argument(
