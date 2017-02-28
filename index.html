@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html" />
+    <meta name="keywords" content="QMC,Multivariate Normal Distribution,
+                                   R, Low WAFOM Point Set" />
+    <title>Development tools of pseudo random number generators
+      for Intel AVX2 and AVX512F.</title>
+    <style type="text/css">
+      H2 {text-align:center}
+    </style>
+  </head>
+  <body>
+    <h1>Development tools of pseudo random number generators
+      for Intel AVX2 and AVX512F.</h1>
+    <h2>Halfway attempt</h2>
+    <p>
+      This is a halfway attempt to make pseudo random number generators for
+      Intel AVX2 and AVX512F SIMD.
+      The attemp is based on SFMT pseudo random number generators,
+      which are generators for Intel SSE2 SIMD.
+    </p>
+    <p>
+      Good random number generator shoud meet three conditions:
+    </p>
+    <ul>
+      <li>maximal period</li>
+      <li>good randomness</li>
+      <li>high speed generation</li>
+    </ul>
+    <p>
+      Maximal period: SFMT PRNGs have variable period depends on seed,
+      but they assure the periods are multiple of specified Mersenne Prime.
+      This halfway attempt calculates parameters which give such periods.
+    </p>
+    <p>
+      Good randomness: Not supported. Some parameters may give so-so good score
+      in BigCrush of TestU01, others may not. You can generate huge number of
+      parameters and pick up good one.
+    </p>
+    <p>
+      High speed generation: Be expected. But you may be disappointed.
+      Need to implement on AVX2 and AVX512F SIMD, and need to measure
+      the time of random number generation.
+    </p>
+
+    <h2>Idea</h2>
+    <p>The Idea is based on dSFMT PRNGs. The following figure shows
+      the main part of
+      <a href="http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/SFMT/index.html#dSFMT">
+        dSFMT(Double precision SFMT)</a>.</p>
+    <img src="fig-dsfmt.png"/>
+    <p><img src="sl1.png"/>shows 64bit width left SHIT(_mm_slli_epi64 in SSE2).
+      The shift value is a parameter.
+    </p>
+    <p><img src="add.png"/>shows EXCLUSIVE OR(_mm_xor_si128 in SSE2).
+      Need two instructions for this figure.</p>
+    <p><img src="sr1.png"/>shows 64 bit width right logical
+      SHIFT(_mm_srli_epi64). Ths shift value is 12 bit fixed.
+    </p>
+    <p><img src="mask.png"/>shows logical AND(_mm_and_si128).
+      The mask value is a parameter.</p>
+    <p><img src="perm.png"/>shows permutation of 32 bit unit(_mm_shuffle_epi32).
+      The parameter is 0x1b.</p>
+    <p>The red arrow line shows the last step of one generation.
+      one generation creates 128 bit(104 bit) random number(two double precision
+      floating point numbers).</p>
+
+    <h3>256 bit</h3>
+    <p>Changing word size from 128 bit to 256 bit will get
+      following figure</p>
+    <img src="fig-dsfmt-avx2.png"/>
+    <p><img src="permp.png"/>shows permutation of 32 bit
+      unit(_mm256_permutevar8x32_epi32).
+      Use _mm256_permutevar8x32_epi32 as rotation of 32 bit unit
+      and p1 is rotation size.</p>
+    <h3>512 bit</h3>
+    <p>Changing word size from 128 bit to 512 bit will get
+      following figure</p>
+    <img src="fig-dsfmt-avx512f.png"/>
+    <p><img src="permp.png"/>shows permutation of 32 bit
+      unit(_mm512_permutevar_epi32).</p>
+
+    <h2>Integer Generator</h2>
+    <p>128 bit SFMT PRNG, integer generator, does not have small loop using
+      lung. Good randomness is expected by using small loop, let's try to
+      design integer generator using small loop.
+    </p>
+    <h3>256 bit</h3>
+    <img src="fig-sfmt-avx2.png"/>
+    <h3>512 bit</h3>
+    <img src="fig-sfmt-avx512f.png"/>
+
+    <h2>Source Programs</h2>
+    <p>Source Programs are in GitHub.
+      <a href="https://github.com/MSaito/DevAVXPRNG">DevAVXPRNG</a>
+    </p>
+  </body>
+</html>
